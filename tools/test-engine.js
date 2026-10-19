@@ -5,6 +5,7 @@
  * plan §10 테스트 목록: 회전 4회 원복 · 비인접 밀기 금지 · 고정 타일 불변 · 포트 불일치 실패 ·
  *   동일 상태 결정적 결과 (+ 체크포인트·능력은 월드 4~5에서 추가)
  * plan §0.6: 레벨 전부 해 존재 · par 가 §3 범위 · 처음부터 풀린 판 없음 · 저장된 풀이가 실제로 풀림
+ * plan §12: 월드 3(혼합)은 회전만으로도, 밀기만으로도 안 풀림 (두 조작 모두 필요)
  */
 "use strict";
 const assert = require("assert");
@@ -157,10 +158,11 @@ t("레벨 검사: 처음부터 풀린 판·잘못된 플래그를 잡음", () =>
 
 // ---------- 레벨 전부 ----------
 const RANGE = {}; // plan §3 월드별 세부 난이도 (최소 조작 수)
-[[1, 3, 1, 2], [4, 8, 2, 3], [9, 12, 3, 4], [13, 15, 4, 5], [16, 18, 1, 2], [19, 23, 2, 4], [24, 27, 3, 5], [28, 30, 4, 6]]
+[[1, 3, 1, 2], [4, 8, 2, 3], [9, 12, 3, 4], [13, 15, 4, 5], [16, 18, 1, 2], [19, 23, 2, 4], [24, 27, 3, 5], [28, 30, 4, 6],
+  [31, 33, 2, 2], [34, 38, 3, 5], [39, 42, 5, 7], [43, 45, 6, 8]]
   .forEach(([a, b, lo, hi]) => { for (let i = a; i <= b; i++) RANGE[i] = [lo, hi]; });
-t("레벨 번호 1~30 빠짐없이", () => {
-  assert.deepStrictEqual(LEVELS.map((l) => l.no), Array.from({ length: 30 }, (_, i) => i + 1));
+t("레벨 번호 1~45 빠짐없이", () => {
+  assert.deepStrictEqual(LEVELS.map((l) => l.no), Array.from({ length: 45 }, (_, i) => i + 1));
 });
 for (const L0 of LEVELS) {
   t(`${L0.id}: 정의·par·풀이`, () => {
@@ -182,13 +184,25 @@ for (const L0 of LEVELS) {
       s = E.apply(s, a);
     }
     assert.ok(E.connect(s, L0).win, "저장된 풀이로 안 풀림");
-    // 크기: 월드 1 = 4×4, 월드 2 = 4×4 → 5×5
-    assert.ok(L0.world === 1 ? L0.n === 4 : L0.n === (L0.no <= 23 ? 4 : 5));
+    // 크기: 월드 1 = 4×4, 월드 2 = 4×4 → 5×5, 월드 3 = 5×5
+    assert.ok(L0.world === 1 ? L0.n === 4 : L0.world === 2 ? L0.n === (L0.no <= 23 ? 4 : 5) : L0.n === 5);
+    if (L0.ops === "rs") {
+      for (const ops of ["r", "s"]) assert.strictEqual(E.solve(st, Object.assign({}, L0, { ops }), { maxDepth: 20 }), null, ops + " 만으로 풀림");
+      const ns = L0.sol.filter((a) => a.t === "s").length;
+      assert.ok(ns >= 1 && L0.par - ns >= 1, "풀이에 회전·밀기가 다 있어야 함");
+      if (L0.no <= 33) assert.strictEqual(ns, 1, "31~33 은 회전 1 + 밀기 1");
+      // 한 조각이 돌리기·밀기 둘 다 되지 않음 (표시가 헷갈리지 않게)
+      assert.ok(!st.cells.some((c) => c && c.rot && c.sl), "돌리고 미는 조각이 섞임");
+    }
     // 월드 2는 빈칸 1개 (여러 빈칸은 초반 제외)
     if (L0.ops === "s") assert.strictEqual(st.cells.filter((c) => c === null).length, 1);
   });
 }
-t("소개 레벨: L01 은 돌릴 수 있는 곡선 1개 · L16 은 밀 수 있는 타일 1개", () => {
+t("소개 레벨: L01 은 돌릴 수 있는 곡선 1개 · L16 은 밀 수 있는 타일 1개 · L31 은 곡선 1 + 직선 1", () => {
+  const c = E.makeState(LEVELS[30]).cells;
+  assert.deepStrictEqual(c.filter((x) => x && x.rot).map((x) => x.sh), ["C"]);
+  assert.deepStrictEqual(c.filter((x) => x && x.sl).map((x) => x.sh), ["S"]);
+  assert.strictEqual(LEVELS[30].par, 2);
   const a = E.makeState(LEVELS[0]).cells.filter((c) => c && c.rot);
   assert.strictEqual(a.length, 1); assert.strictEqual(a[0].sh, "C"); assert.strictEqual(LEVELS[0].par, 1);
   const b = E.makeState(LEVELS[15]).cells.filter((c) => c && c.sl);

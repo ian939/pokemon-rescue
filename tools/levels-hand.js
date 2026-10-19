@@ -24,4 +24,16 @@ module.exports = {
       "#t #r #t #t",
     ],
   },
+  // L31 혼합 소개 — 빈칸에 직선을 밀어 넣고(밀기 1) 곡선을 한 번 돌린다(회전 1). 둘 다 해야 풀린다
+  L31: {
+    n: 5, ops: "rs",
+    start: { side: "W", at: 2 }, goal: { side: "E", at: 3 },
+    rows: [
+      "#r #r #b #r #r",
+      "#r #b #r #r #r",
+      "S1 S1 . C1r #r",
+      "#r #r S1s C0 S1",
+      "#r #b #r #r #r",
+    ],
+  },
 };

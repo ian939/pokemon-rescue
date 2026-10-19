@@ -3,8 +3,9 @@
  *   node tools/gen-levels.js
  *
  * 방법: 정답 길(출발 문 → 센터 문)을 먼저 깔고 → 나머지 칸을 장애물·곁가지로 채우고 →
- *       월드 1은 돌릴 수 있는 칸을 섞고, 월드 2는 빈칸을 무작위로 돌아다니게 해 섞는다 →
+ *       월드 1은 돌릴 수 있는 칸을 섞고, 월드 2는 빈칸을 무작위로 돌아다니게 해 섞고, 월드 3은 둘 다 →
  *       솔버(BFS)로 잰 최소 조작 수가 그 레벨의 목표(par)와 같은 것만 고른다.
+ *       월드 3은 "회전만으로도, 밀기만으로도 안 풀리는" 판만 고른다 (plan §12 두 조작 모두 필요).
  * 씨앗이 레벨 번호로 고정이라 다시 돌려도 같은 판이 나온다.
  * 소개 레벨은 tools/levels-hand.js 에서 손으로 고친다.
  */
@@ -53,7 +54,25 @@ const W2 = [
   { id: "L29", n: 5, par: 5, d: 4, br: 2, fx: 0, len: [7, 10], gates: MIX },
   { id: "L30", n: 5, par: 6, d: 4, br: 2, fx: 0, len: [8, 11], gates: MIX },
 ];
-const INTRO = { L01: "r", L02: "r", L03: "r", L16: "s", L17: "s", L18: "s" };
+const W3 = [
+  // 월드 3 반짝 동굴 — 회전+밀기, 5×5. kr/ks = 돌릴/밀 정답 길 칸 수, dr/ds = 돌릴/밀 곁가지 수, tee = 세갈래로 바꿀 정답 길 칸 수
+  // 돌리는 조각과 미는 조각은 따로 (한 조각이 둘 다 되면 헷갈림). 31~33 = 회전 1 + 밀기 1
+  { id: "L32", par: 2, kr: 1, ks: 1, dr: 0, ds: 0, tee: 0, len: [5, 7], gates: WE },
+  { id: "L33", par: 2, kr: 1, ks: 1, dr: 1, ds: 0, tee: 1, len: [6, 8], gates: WE },
+  { id: "L34", par: 3, kr: 1, ks: 2, dr: 1, ds: 1, tee: 1, len: [6, 8], gates: MIX },
+  { id: "L35", par: 3, kr: 2, ks: 1, dr: 1, ds: 1, tee: 1, len: [6, 8], gates: MIX },
+  { id: "L36", par: 4, kr: 2, ks: 2, dr: 1, ds: 1, tee: 1, len: [6, 9], gates: MIX },
+  { id: "L37", par: 4, kr: 2, ks: 2, dr: 2, ds: 1, tee: 2, len: [6, 9], gates: MIX },
+  { id: "L38", par: 5, kr: 2, ks: 2, dr: 2, ds: 1, tee: 2, len: [7, 9], gates: MIX },
+  { id: "L39", par: 5, kr: 2, ks: 3, dr: 2, ds: 2, tee: 2, len: [7, 10], gates: MIX },
+  { id: "L40", par: 5, kr: 3, ks: 2, dr: 2, ds: 2, tee: 2, len: [7, 10], gates: MIX },
+  { id: "L41", par: 6, kr: 3, ks: 2, dr: 2, ds: 2, tee: 2, len: [7, 10], gates: MIX },
+  { id: "L42", par: 6, kr: 3, ks: 3, dr: 2, ds: 2, tee: 3, len: [7, 10], gates: MIX },
+  { id: "L43", par: 6, kr: 3, ks: 3, dr: 3, ds: 2, tee: 3, len: [8, 11], gates: MIX },
+  { id: "L44", par: 7, kr: 3, ks: 3, dr: 3, ds: 2, tee: 3, len: [8, 11], gates: MIX },
+  { id: "L45", par: 8, kr: 4, ks: 3, dr: 3, ds: 2, tee: 3, len: [8, 11], gates: MIX },
+];
+const INTRO = { L01: "r", L02: "r", L03: "r", L16: "s", L17: "s", L18: "s", L31: "rs", L32: "rs", L33: "rs" };
 
 // ---------- 난수 ----------
 function mulberry(a) {
@@ -118,6 +137,7 @@ function gatesFor(R, n, pair) {
 const tok = (sh, r, f) => sh + r + (f || "");
 const OBS_W1 = ["t", "t", "t", "b", "r"];
 const OBS_W2 = ["t", "b", "r", "r"];
+const OBS_W3 = ["r", "r", "r", "b"];
 
 // ---------- 월드 1: 회전 ----------
 function genRotate(cfg, R) {
@@ -186,11 +206,64 @@ function genSlide(cfg, R) {
   return lv;
 }
 
+// ---------- 월드 3: 회전 + 밀기 ----------
+/** 정답 길 칸 하나를 세갈래(T)로 — 원래 두 포트는 그대로 두고 남은 두 방향 중 하나를 더 연다 (곁길·막힌 길) */
+function toTee(R, t) {
+  const has = E.ports({ sh: t.sh, r: t.r });
+  const miss = pick(R, [0, 1, 2, 3].filter((d) => !has.includes(d))); // T 는 r 방향이 막힘 (r0 = N 막힘)
+  return { i: t.i, sh: "T", r: miss };
+}
+function genMixed(cfg, R) {
+  const n = 5;
+  const { start, goal } = gatesFor(R, n, pick(R, cfg.gates));
+  const s = E.gateCell(n, start), g = E.gateCell(n, goal);
+  if (s === g) return null;
+  const p = randomPath(R, n, s, g, cfg.len);
+  if (!p) return null;
+  let pt = shuffle(R, pathTiles(n, p, start, goal));
+  pt = pt.map((t, k) => (k < cfg.tee ? toTee(R, t) : t));
+  shuffle(R, pt);
+  const cells = new Array(n * n).fill(null);
+  pt.forEach((t, k) => {
+    if (k < cfg.kr) cells[t.i] = tok(t.sh, (t.r + ri(R, 1, E.PERIOD[t.sh] - 1)) % 4, "r");
+    else if (k < cfg.kr + cfg.ks) cells[t.i] = tok(t.sh, t.r, "s");
+    else cells[t.i] = tok(t.sh, t.r);
+  });
+  const onPath = new Set(p);
+  const rest = shuffle(R, [...Array(n * n).keys()].filter((i) => !onPath.has(i)));
+  if (rest.length < 1 + cfg.ds + cfg.dr) return null;
+  rest.forEach((i, k) => {
+    if (k === 0) cells[i] = ".";
+    else if (k <= cfg.ds) cells[i] = tok(pick(R, ["S", "C", "T"]), ri(R, 0, 3), "s");
+    else if (k <= cfg.ds + cfg.dr) cells[i] = tok(pick(R, ["S", "C", "T"]), ri(R, 0, 3), "r");
+    else cells[i] = "#" + pick(R, OBS_W3);
+  });
+  const lv = { n, ops: "rs", start, goal, cells };
+  let st = E.makeState(lv), last = -1;
+  const steps = ri(R, cfg.ks * 2, cfg.ks * 3 + 2);
+  for (let k = 0; k < steps; k++) {
+    const acts = E.actions(st, "s").filter((a) => a.i !== last);
+    if (!acts.length) break;
+    const a = pick(R, acts);
+    last = a.to;
+    st = E.apply(st, a);
+  }
+  lv.cells = st.cells.map(E.cellToken);
+  return lv;
+}
+/** 회전만으로도, 밀기만으로도 안 풀리면 true (두 조작 모두 필요) */
+function needsBoth(lv) {
+  const st = E.makeState(lv);
+  for (const ops of ["r", "s"]) if (E.solve(st, Object.assign({}, lv, { ops }), { maxDepth: 20 })) return false;
+  return true;
+}
+
 // ---------- 고르기 ----------
-function finish(id, lv) {
+function finish(id, lv, maxDepth) {
   const err = E.validate(lv);
   if (err.length) return { err };
-  const sol = E.solve(E.makeState(lv), lv, { maxDepth: 14 });
+  // 목표 par 까지만 찾는다 — 그보다 깊은 판은 어차피 버리므로 (BFS 라 결과는 같고 훨씬 빠르다)
+  const sol = E.solve(E.makeState(lv), lv, { maxDepth: maxDepth || 14 });
   if (!sol) return { err: ["해 없음"] };
   return { sol };
 }
@@ -199,10 +272,16 @@ function hashId(id) { let h = 7; for (const c of id) h = (h * 31 + c.charCodeAt(
 function build(cfg, world) {
   for (let tries = 0; tries < 20000; tries++) {
     const R = mulberry(hashId(cfg.id) * 7919 + tries);
-    const lv = world === 1 ? genRotate(cfg, R) : genSlide(cfg, R);
+    const lv = world === 1 ? genRotate(cfg, R) : world === 2 ? genSlide(cfg, R) : genMixed(cfg, R);
     if (!lv) continue;
-    const { err, sol } = finish(cfg.id, lv);
+    const { err, sol } = finish(cfg.id, lv, cfg.par);
     if (err || sol.moves !== cfg.par) continue;
+    if (world === 3) {
+      // 회전만 잔뜩 + 밀기 한 번이 되지 않게: par 5 이상은 밀기 2번 이상, 회전도 2번 이상
+      const ns = sol.actions.filter((a) => a.t === "s").length, nr = sol.moves - ns;
+      if (cfg.par >= 5 && (ns < 2 || nr < 2)) continue;
+      if (!needsBoth(lv)) continue;
+    }
     // 정답 길에서 돌리거나 미는 칸이 실제로 쓰이는지 (곁가지만 만지는 풀이는 버림)
     return Object.assign(lv, { par: sol.moves, sol: sol.actions, tries });
   }
@@ -214,6 +293,7 @@ function fromHand(id, h) {
   const lv = { n: h.n, ops: h.ops, start: h.start, goal: h.goal, cells };
   const { err, sol } = finish(id, lv);
   if (err) throw new Error(id + ": " + err.join(", "));
+  if (lv.ops === "rs" && !needsBoth(lv)) throw new Error(id + ": 한 가지 조작만으로 풀림");
   return Object.assign(lv, { par: sol.moves, sol: sol.actions, hand: true });
 }
 
@@ -228,6 +308,8 @@ function main() {
   for (const c of W1) add(c.id, 1, build(c, 1));
   add("L16", 2, fromHand("L16", HAND.L16));
   for (const c of W2) add(c.id, 2, build(c, 2));
+  add("L31", 3, fromHand("L31", HAND.L31));
+  for (const c of W3) add(c.id, 3, build(c, 3));
   for (const lv of all) { delete lv.tries; delete lv.hand; }
   all.sort((a, b) => a.no - b.no);
   const out = path.join(__dirname, "..", "data", "levels.js");

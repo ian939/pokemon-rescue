@@ -354,7 +354,7 @@ function startLevel(no) {
   G.state.cells.forEach((t) => { if (t && t.sh) { G.ang[t.id] = t.r * 90; G.prevR[t.id] = t.r; } });
   renderGame();
   const name = Poke.name(G.poke);
-  if (lv.intro) say(name, L.lost, lv.intro === "r" ? L.introR : L.introS);
+  if (lv.intro) say(name, L.lost, { r: L.introR, s: L.introS, rs: L.introRS }[lv.intro]);
   else say(name, L.lost);
   if (lv.intro) showFinger(lv.sol[0]);
 }
@@ -438,7 +438,7 @@ function buildBoard() {
     const base = t.br ? "bridge" : t.rot || t.sl ? "wood" : "stone";
     const turn = t.br && t.sh === "S" && t.r % 2 ? ` style="transform:rotate(90deg)"` : ""; // 다리 판자를 길 방향으로
     return `<div class="tile path ${base} ${t.rot ? "can-rot" : ""}" data-id="${t.id}">
-      <div class="blk"${turn}></div>${roadSVG(E.SHAPES[t.sh])}${t.rot ? `<span class="badge rot">↻</span>` : ""}<span class="badge arrow"></span></div>`;
+      <div class="blk"${turn}></div>${roadSVG(E.SHAPES[t.sh])}${t.rot ? `<span class="badge rot">↻</span>` : ""}${t.sl && G.lv.ops === "rs" ? `<span class="badge sl">✋</span>` : ""}<span class="badge arrow"></span></div>`;
   }).join("");
   const sp = gatePos(n, lv.start), gp = gatePos(n, lv.goal);
   const toBoard = (g) => (E.SIDE[g.side] + 2) % 4; // 문에서 판 쪽 방향
@@ -648,7 +648,6 @@ function showFinger(a) {
 function hideFinger() { const f = $(".finger"); if (f) f.className = "finger hidden"; }
 
 // ---------- 출발 ----------
-const DIR_EN = EN.dir;
 function center(x, y) { return [(x + 0.5) * G.S, (y + 0.5) * G.S]; }
 async function go() {
   const { lv } = G;
@@ -683,11 +682,10 @@ async function go() {
   }
   say(en(EN.go));
   await sleep(500);
-  let lastD = -1;
   for (let k = 1; k < pts.length; k++) {
     const [ax, ay] = pts[k - 1], [bx, by] = pts[k];
     const d = by < ay ? 0 : bx > ax ? 1 : by > ay ? 2 : 3;
-    if (d !== lastD) { say(en(DIR_EN[d])); lastD = d; }
+    // 방향 영어(Up!·Right!)는 걸음이 빨라 다 끊겨서 뺐다 (v2026-10-19b 사용자 요청)
     place(pts[k], d === 1 ? true : d === 3 ? false : null);
     SFX.step();
     await sleep(TEST ? 20 : 420);

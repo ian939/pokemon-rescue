@@ -4,7 +4,7 @@
 
 확인하는 것
   1. 처음 → 지도 → 월드 1 (로켓단 등장) → L01: 손가락 안내, 틀린 채 출발(끊긴 곳 ✕), 한 번 돌려 연결 빛 → 출발 → 구조 성공·별 3·도감
-  2. 월드 1·2 30레벨을 저장된 풀이대로 실제 탭/드래그로 끝까지 (월드 2는 드래그와 탭 섞어서) — 월드 끝 로켓단·장식
+  2. 월드 1·2·3 45레벨을 저장된 풀이대로 실제 탭/드래그로 끝까지 (월드 2·3은 드래그와 탭 섞어서) — 월드 끝 로켓단·장식
   3. 되돌리기·다시·처음부터 · 힌트 1→2→3단계(손가락) · 건너뛰기 → 다음 레벨 열림 · 3분 지나면 건너뛰기
   4. 도감 · 센터(구조한 친구·장식) · 잠긴 레벨/곧 열려요
   5. 보호자 화면 잠금(곱셈) · 설정 · '초기화' 글자 입력
@@ -133,7 +133,8 @@ def main():
         pg.click("[data-a=play]")
         pg.wait_for_selector(".wnode")
         check(pg.locator(".wnode").count() == 5, "지도: 월드 5개")
-        check(pg.locator(".wnode.soon").count() == 3, "지도: 월드 3~5 '곧 열려요'")
+        check(pg.locator(".wnode.soon").count() == 2, "지도: 월드 4~5 '곧 열려요'")
+        check(pg.locator('.wnode[data-w="3"].locked').count() == 1, "지도: 월드 3은 아직 잠김")
         check(pg.locator('.wnode[data-w="2"].locked').count() == 1, "지도: 월드 2는 아직 잠김")
         pg.screenshot(path=str(OUT / "02-map.png"))
         pg.click('.wnode[data-w="1"]')
@@ -268,7 +269,34 @@ def main():
         check(not bad, f"월드 2: L16~L30 드래그·탭으로 모두 구조·별 3 {bad or ''}")
         close_modal(pg, "next")
         pg.wait_for_selector(".rocket-box")
-        check("곧 열려요" in pg.locator(".rocket-box").inner_text(), "월드 2 끝 → 다음 지역은 곧 열려요")
+        check("반짝 동굴 지역이 열렸어요" in pg.locator(".rocket-box").inner_text(), "월드 2 끝 → 분수 + 반짝 동굴 열림")
+        close_modal(pg, "ok")
+        pg.wait_for_selector(".rocket-box")
+        check(True, "월드 3 들어가면 로켓단 연출")
+        close_modal(pg, "ok")
+        pg.click('.lvbtn[data-no="31"]', force=True)
+        pg.wait_for_selector(".board .tile")
+        check(pg.locator(".tile .badge.rot").count() == 1 and pg.locator(".tile .badge.sl").count() == 1, "L31: ↻ 돌리는 조각 1 · ✋ 미는 조각 1")
+        check(pg.locator(".finger.tapme, .finger.dragme").count() == 1, "L31: 손가락 안내")
+        pg.screenshot(path=str(OUT / "16-L31.png"))
+        # 돌리기만 해서는 안 이어진다
+        rot = pg.evaluate("() => window.__T.G.state.cells.findIndex(t => t && t.rot)")
+        tap_cell(pg, rot)
+        check(pg.locator("#goBtn.ready").count() == 0, "L31: 돌리기만으로는 안 이어짐")
+        pg.click("#resetBtn")
+        bad = []
+        for no in range(31, 46):
+            ok, n, stars = solve_level(no, drag_every=2)
+            if not ok or stars != 3:
+                bad.append((no, ok, stars))
+            if no == 42:
+                pg.screenshot(path=str(OUT / "17-L42.png"))
+            if no < 45:
+                close_modal(pg, "map")
+        check(not bad, f"월드 3: L31~L45 탭·드래그로 모두 구조·별 3 {bad or ''}")
+        close_modal(pg, "next")
+        pg.wait_for_selector(".rocket-box")
+        check("곧 열려요" in pg.locator(".rocket-box").inner_text(), "월드 3 끝 → 수정 등 + 다음 지역은 곧 열려요")
         close_modal(pg, "ok")
         pg.wait_for_selector(".wnode")
 
@@ -295,7 +323,7 @@ def main():
         close_modal(pg, "ok")
         pg.evaluate("() => window.__T.renderCenter()")
         check(pg.locator(".roam").count() >= 10, "센터: 구조한 친구들이 돌아다님")
-        check(pg.locator(".deco").count() == 2, "센터: 장식 2개 (화분·분수)")
+        check(pg.locator(".deco").count() == 3, "센터: 장식 3개 (화분·분수·수정 등)")
         pg.screenshot(path=str(OUT / "14-center.png"))
 
         # ---- 5. 보호자
@@ -329,7 +357,7 @@ def main():
         pg.evaluate("() => { window.__T.Store.data.settings.openAll = true; window.__T.Store.save(); }")
         for (w, h, name) in [(1024, 768, "iPad 10.2 가로"), (1180, 820, "iPad 11 가로"), (1366, 1024, "iPad 12.9 가로"), (820, 1180, "iPad 세로"), (844, 390, "폰 가로")]:
             pg.set_viewport_size({"width": w, "height": h})
-            for no in (1, 24):
+            for no in (1, 24, 40):
                 pg.evaluate(f"() => window.__T.startLevel({no})")
                 pg.wait_for_selector(".board .tile")
                 pg.wait_for_timeout(80)

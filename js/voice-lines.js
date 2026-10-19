@@ -11,6 +11,7 @@
     lost: "길을 잃었어요. 센터까지 길을 이어 주세요!",
     introR: "길 조각을 눌러서 돌려 보세요!",
     introS: "빈칸 옆 길 조각을 밀어서 옮겨 보세요!",
+    introRS: "돌리고 밀어서 길을 이어 보세요!",
     connected: "길이 이어졌어요! 출발 버튼을 눌러요!",
     broken: "여기서 길이 끊겼어요. 다시 해 봐요!",
     noStart: "첫 칸부터 길을 이어 주세요!",
@@ -36,16 +37,15 @@
     locked: "앞 레벨을 먼저 해 봐요!",
     updateNew: "새 버전이 나왔어요!",
   };
-  // 영어 한마디 (en-US) — 걸을 때 방향, 성공, 숫자, 별
+  // 영어 한마디 (en-US) — 출발, 성공, 숫자, 별. 걸을 때 방향(Up!·Right!)은 걸음이 빨라 끊겨서 뺐다
   const EN = {
-    dir: ["Up!", "Right!", "Down!", "Left!"],
     go: "Let's go!",
     rescued: "Rescued!",
     nums: ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten"],
     stars: ["", "One star!", "Two stars!", "Three stars!"],
     great: "Great job!",
   };
-  const EN_ALL = [].concat(EN.dir, EN.go, EN.rescued, EN.nums.slice(1), EN.stars.slice(1), EN.great);
+  const EN_ALL = [].concat(EN.go, EN.rescued, EN.nums.slice(1), EN.stars.slice(1), EN.great);
   const api = { L, EN, EN_ALL };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.VoiceLines = api;
