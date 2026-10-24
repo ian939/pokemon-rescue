@@ -21,7 +21,7 @@ const Store = {
   load() {
     try { this.data = JSON.parse(localStorage.getItem(this.KEY) || "null"); } catch (e) { this.data = null; }
     const d = this.data || {};
-    this.data = Object.assign({ levels: {}, dex: {}, dexOrder: [], deco: [], seen: {}, last: 1 }, d);
+    this.data = Object.assign({ levels: {}, dex: {}, dexOrder: [], deco: [], seen: {}, last: 1, memories: {} }, d);
     this.data.settings = Object.assign({ sound: true, voice: true, hintMax: 3, openAll: false, autoSolve: false }, d.settings || {});
   },
   save() { try { localStorage.setItem(this.KEY, JSON.stringify(this.data)); } catch (e) { /* 저장 공간 없음 */ } },
@@ -333,44 +333,78 @@ function rocketScene(line, line2, extra) {
 // 퍼즐
 // =====================================================================
 const G = {};
+// 능력 (월드 4~) — 버튼 그림은 그 포켓몬 도트
+const ABIL_INFO = {
+  w: { poke: 7, name: "꼬부기", what: "물 다리", fx: "💦" },
+  f: { poke: 4, name: "파이리", what: "덤불 태우기", fx: "🔥" },
+  v: { poke: 1, name: "이상해씨", what: "덩굴 다리", fx: "🌿" },
+};
+const INTRO_SAY = { r: "introR", s: "introS", rs: "introRS", w: "introW", f: "introF", v: "introV", k: "introK", m: "introM" };
 function startLevel(no) {
   const lv = LV[no], w = worldOf(no);
   Store.data.last = no; Store.save();
-  const keepPoke = G.lv && G.lv.no === no && G.poke;
+  const gates = E.startsOf(lv);
+  const keep = G.lv && G.lv.no === no && G.pokes && G.pokes.length === gates.length;
   Object.assign(G, {
-    lv, w,
+    lv, w, gates,
     init: E.makeState(lv),
     state: E.makeState(lv),
     moves: 0,
     hist: [], redo: [],
-    ang: {}, prevR: {},
+    ang: {}, prevR: {}, sig: {},
     busy: false,
     hint: 0,
     hintIds: null,
+    aim: null,
+    rescued: new Set(),
     t0: Date.now(),
-    wasWin: false,
-    poke: keepPoke || Poke.pick(w, no === w.to),
+    wasReady: "",
+    wasNeed: false,
+    pokes: keep ? G.pokes : pickPokes(w, no, gates.length),
   });
-  G.state.cells.forEach((t) => { if (t && t.sh) { G.ang[t.id] = t.r * 90; G.prevR[t.id] = t.r; } });
   renderGame();
-  const name = Poke.name(G.poke);
-  if (lv.intro) say(name, L.lost, { r: L.introR, s: L.introS, rs: L.introRS }[lv.intro]);
-  else say(name, L.lost);
-  if (lv.intro) showFinger(lv.sol[0]);
+  const names = G.pokes.map(Poke.name);
+  const intro = lv.intro ? L[INTRO_SAY[lv.intro]] : null;
+  say(...names, L.lost, intro);
+  if (lv.intro) introGuide();
+}
+/** 구조할 포켓몬 — 두 마리면 서로 다르게 */
+function pickPokes(w, no, k) {
+  const out = [];
+  while (out.length < k) {
+    const p = Poke.pick(w, no === w.to && out.length === 0);
+    if (!out.includes(p) || out.length > 20) out.push(p);
+  }
+  return out;
+}
+function introGuide() {
+  const lv = G.lv;
+  if ("wfv".includes(lv.intro)) {
+    // 능력 소개: 버튼이 반짝이고, 손가락은 쓸 자리에
+    $(`.abil[data-k="${lv.intro}"]`).classList.add("pulse");
+    const a = lv.sol.find((x) => x.t === "a");
+    if (a) showFinger({ t: "r", i: a.i });
+  } else if (lv.intro === "k") {
+    $$(".tile .berry").forEach((b) => b.classList.add("pulse"));
+    showFinger(lv.sol[0]);
+  } else showFinger(lv.sol[0]);
 }
 
 function renderGame() {
   const { lv, w } = G;
   const s = lvState(lv.no);
+  const ab = G.state.ab;
+  const abKeys = E.ABIL.filter((k) => lv.abil && lv.abil[k]);
   show(`
   <div class="game" style="--bg:url(../assets/board/region-${w.bg}.webp)">
     <div class="board-wrap" id="boardWrap"><div class="board" id="board"></div></div>
     <aside class="panel">
       <div class="pan-head"><button class="btn small" data-a="back" aria-label="레벨 고르기">◀</button><b>${lvLabel(lv.no)}</b><span>${esc(w.name)}</span></div>
-      <div class="win-box who">
-        <img src="${Poke.img(G.poke)}" alt="">
-        <div><b>${esc(Poke.name(G.poke))}</b>${rarBadge(G.poke)}<small>길을 잃었어요</small></div>
+      <div class="win-box who ${G.pokes.length > 1 ? "two" : ""}">
+        ${G.pokes.map((p, k) => `<div class="who-one" data-g="${k}"><img src="${Poke.img(p)}" alt=""><div><b>${esc(Poke.name(p))}</b>${rarBadge(p)}<small>${G.pokes.length > 1 ? "" : "길을 잃었어요"}</small></div></div>`).join("")}
       </div>
+      ${abKeys.length ? `<div class="abils">${abKeys.map((k) => `<button class="btn abil" data-k="${k}" aria-label="${ABIL_INFO[k].name} ${ABIL_INFO[k].what}">
+        <img src="${Poke.img(ABIL_INFO[k].poke)}" alt=""><span>${ABIL_INFO[k].what}</span><i class="cnt">${ab[k]}</i></button>`).join("")}</div>` : ""}
       <div class="win-box moves"><span>움직인 횟수</span><b id="mv">0</b><small>⭐⭐⭐ = ${lv.par}번 안에${s.best ? ` · 최고 ${s.best}번` : ""}</small></div>
       <button id="goBtn" class="btn huge go" data-a="go">출발!</button>
       <div class="tools">
@@ -389,6 +423,8 @@ function renderGame() {
   buildBoard();
   window.onresize = () => { if (!G.busy) buildBoard(); };
   $("#app").onclick = (e) => {
+    const ab = e.target.closest(".abil");
+    if (ab && !G.busy) return pickAbility(ab.dataset.k);
     const b = e.target.closest("[data-a]");
     if (!b || b.disabled) return;
     const a = b.dataset.a;
@@ -412,9 +448,9 @@ function renderGame() {
 // ---------- 보드 그리기 ----------
 const ROAD = { N: "M50 50L50 -2", E: "M50 50L102 50", S: "M50 50L50 102", W: "M50 50L-2 50" };
 const DIRK = ["N", "E", "S", "W"];
-function roadSVG(dirs, cls) {
+function roadSVG(dirs, cls, rot) {
   const d = dirs.map((k) => ROAD[DIRK[k]]).join("");
-  return `<svg class="road ${cls || ""}" viewBox="0 0 100 100" preserveAspectRatio="none"><path class="rd-o" d="${d}"/><path class="rd-i" d="${d}"/><path class="rd-g" d="${d}"/></svg>`;
+  return `<svg class="road ${cls || ""}" viewBox="0 0 100 100" preserveAspectRatio="none"${rot ? ` style="transform:rotate(${rot}deg)"` : ""}><path class="rd-o" d="${d}"/><path class="rd-i" d="${d}"/><path class="rd-g" d="${d}"/></svg>`;
 }
 const OB_IMG = { t: "ob-tree", r: "ob-rock", b: "ob-bush" };
 function gatePos(n, g) {
@@ -424,6 +460,26 @@ function gatePos(n, g) {
   if (s === 0) return [g.at + 1, 0];
   return [g.at + 1, n + 1];
 }
+/** 타일 종류가 바뀌었는지 (물 → 다리, 덤불 → 없음) 알아보는 글자 — 방향(r)은 빼고 */
+function tileSig(t) {
+  if (t.ob) return "o" + t.ob;
+  if (t.wa) return "w";
+  if (t.pit) return "p";
+  return ["P", t.sh, t.rot, t.sl, t.br, t.cp, t.wb, t.vb].join("");
+}
+function tileHTML(t) {
+  if (t.ob) return { cls: "tile ob", html: `<img src="assets/board/${OB_IMG[t.ob]}.png" alt="">` };
+  // 물·낭떠러지: 능력을 쓰면 생길 길을 흐리게 미리 보여 준다 (plan §4 예상 결과 표시)
+  if (t.wa) return { cls: "tile water", html: `<div class="blk"></div>${roadSVG(E.SHAPES[t.wa.sh], "ghost", t.wa.r * 90)}` };
+  // 낭떠러지 그림은 틈이 세로 — 세로 길이면 틈을 가로로 돌려 길이 틈을 건너가게
+  if (t.pit) return { cls: "tile pit", html: `<div class="blk"${t.pit.sh === "S" && t.pit.r % 2 === 0 ? ` style="transform:rotate(90deg)"` : ""}></div>${roadSVG(E.SHAPES[t.pit.sh], "ghost", t.pit.r * 90)}` };
+  const base = t.wb ? "bridge" : t.vb ? "vine" : t.br ? "bridge" : t.rot || t.sl ? "wood" : "stone";
+  const turn = (t.br || t.wb || t.vb) && t.sh === "S" && t.r % 2 ? ` style="transform:rotate(90deg)"` : ""; // 판자·덩굴을 길 방향으로
+  return {
+    cls: `tile path ${base} ${t.rot ? "can-rot" : ""}`,
+    html: `<div class="blk"${turn}></div>${roadSVG(E.SHAPES[t.sh])}${t.cp ? `<img class="berry" src="assets/items/oran-berry.png" alt="">` : ""}${t.rot ? `<span class="badge rot">↻</span>` : ""}${t.sl && G.lv.ops !== "s" ? `<span class="badge sl">✋</span>` : ""}<span class="badge arrow"></span>`,
+  };
+}
 function buildBoard() {
   const { lv } = G;
   const n = lv.n;
@@ -432,49 +488,63 @@ function buildBoard() {
   G.S = S;
   board.style.setProperty("--S", S + "px");
   board.style.width = board.style.height = S * (n + 2) + "px";
-  const tiles = G.state.cells.map((t) => {
-    if (!t) return "";
-    if (t.ob) return `<div class="tile ob" data-id="${t.id}"><img src="assets/board/${OB_IMG[t.ob]}.png" alt=""></div>`;
-    const base = t.br ? "bridge" : t.rot || t.sl ? "wood" : "stone";
-    const turn = t.br && t.sh === "S" && t.r % 2 ? ` style="transform:rotate(90deg)"` : ""; // 다리 판자를 길 방향으로
-    return `<div class="tile path ${base} ${t.rot ? "can-rot" : ""}" data-id="${t.id}">
-      <div class="blk"${turn}></div>${roadSVG(E.SHAPES[t.sh])}${t.rot ? `<span class="badge rot">↻</span>` : ""}${t.sl && G.lv.ops === "rs" ? `<span class="badge sl">✋</span>` : ""}<span class="badge arrow"></span></div>`;
-  }).join("");
-  const sp = gatePos(n, lv.start), gp = gatePos(n, lv.goal);
+  const gp = gatePos(n, lv.goal);
   const toBoard = (g) => (E.SIDE[g.side] + 2) % 4; // 문에서 판 쪽 방향
   board.innerHTML = `
     <div class="field" style="left:${S}px;top:${S}px;width:${S * n}px;height:${S * n}px"></div>
     <div class="holes"></div>
-    <div class="gate start" style="left:${sp[0] * S}px;top:${sp[1] * S}px">${roadSVG([toBoard(lv.start)], "stub")}
-      <img class="gp" src="${Poke.img(G.poke)}" alt=""><span class="bubble">?</span></div>
+    ${G.gates.map((g, k) => { const sp = gatePos(n, g); return `<div class="gate start" data-g="${k}" style="left:${sp[0] * S}px;top:${sp[1] * S}px">${roadSVG([toBoard(g)], "stub")}
+      <img class="gp" src="${Poke.img(G.pokes[k])}" alt=""><span class="bubble">?</span></div>`; }).join("")}
     <div class="gate goal" style="left:${gp[0] * S}px;top:${gp[1] * S}px">${roadSVG([toBoard(lv.goal)], "stub")}
       <img class="house" src="assets/ui/center-house.png" alt=""></div>
-    ${tiles}
+    <div class="tiles"></div>
     <div class="marks"></div>
-    <div class="walker hidden"><img src="${Poke.img(G.poke)}" alt=""></div>
+    <div class="walker hidden"><img src="${Poke.img(G.pokes[0])}" alt=""></div>
     <div class="finger hidden">👆</div>`;
   G.els = {};
-  $$(".tile", board).forEach((el) => { G.els[el.dataset.id] = el; });
-  for (const id in G.els) G.els[id].style.transition = "none";
-  sync();
+  G.sig = {};
+  sync(true);
   requestAnimationFrame(() => { for (const id in G.els) G.els[id].style.transition = ""; });
   bindBoard(board);
 }
 function cellXY(i) { const n = G.lv.n; return [(i % n) + 1, Math.floor(i / n) + 1]; }
+/** 아직 구조 안 한 문 중 지금 출발하면 구조되는 문 */
+function readyGates() { return G.gates.map((_, k) => k).filter((k) => !G.rescued.has(k) && G.conns[k].win); }
 
-/** 상태 → 화면 (자리 · 방향 · 빛 · 표시 · 버튼) */
-function sync() {
+/** 상태 → 화면 (자리 · 종류 · 방향 · 빛 · 표시 · 버튼) */
+function sync(fresh) {
   const { state, lv, S } = G;
-  const conn = E.connect(state, lv);
-  G.conn = conn;
-  const lit = new Set(conn.lit);
+  G.conns = G.gates.map((_, k) => E.connect(state, lv, k));
+  const lit = new Set();
+  G.conns.forEach((c) => c.lit.forEach((i) => lit.add(i)));
   const ops = lv.ops;
+  const box = $(".tiles");
+  const live = new Set();
   state.cells.forEach((t, i) => {
     if (!t) return;
-    const el = G.els[t.id];
+    live.add(t.id);
+    let el = G.els[t.id];
+    const sig = tileSig(t);
+    if (!el) {
+      el = document.createElement("div");
+      el.dataset.id = t.id;
+      el.style.transition = "none";
+      box.appendChild(el);
+      G.els[t.id] = el;
+    }
+    if (G.sig[t.id] !== sig) {
+      // 처음 그리거나 종류가 바뀜 (물 → 물 다리 등) — 속을 다시 그리고 방향은 지금 방향으로
+      const h = tileHTML(t);
+      el.className = h.cls;
+      el.innerHTML = h.html;
+      G.sig[t.id] = sig;
+      if (t.sh) { G.ang[t.id] = t.r * 90; G.prevR[t.id] = t.r; }
+    }
+    el.style.display = "";
     const [x, y] = cellXY(i);
     el.style.left = x * S + "px";
     el.style.top = y * S + "px";
+    el.classList.toggle("aim", !!(G.aim && E.canUse(state, G.aim, i)));
     if (!t.sh) return;
     const pr = G.prevR[t.id];
     if (pr !== t.r) {
@@ -490,21 +560,44 @@ function sync() {
     if (tgt >= 0) { const d = [0, 1, 2, 3].find((k) => E.neighbor(lv.n, i, k) === tgt); $(".badge.arrow", el).dataset.d = d; }
     el.classList.toggle("hint2", !!(G.hintIds && G.hintIds.has(t.id)));
   });
+  for (const id in G.els) if (!live.has(id)) G.els[id].style.display = "none"; // 태운 덤불 (되돌리면 다시 보임)
   $(".holes").innerHTML = state.cells.map((t, i) => {
     if (t) return "";
     const [x, y] = cellXY(i);
     return `<div class="hole" style="left:${x * S}px;top:${y * S}px"></div>`;
   }).join("");
-  $(".gate.start").classList.toggle("lit", conn.lit.length > 0);
-  $(".gate.goal").classList.toggle("lit", conn.win);
-  $("#board").classList.toggle("won", conn.win);
-  $("#goBtn").classList.toggle("ready", conn.win);
+  const ready = readyGates();
+  G.gates.forEach((_, k) => {
+    const gEl = $(`.gate.start[data-g="${k}"]`);
+    gEl.classList.toggle("lit", G.conns[k].lit.length > 0);
+    gEl.classList.toggle("done", G.rescued.has(k));
+    const w = $(`.who-one[data-g="${k}"]`);
+    if (w) w.classList.toggle("done", G.rescued.has(k));
+  });
+  // 센터까지 닿았는데 열매가 빠졌으면 열매를 깜빡여 알려 준다
+  const need = G.gates.some((_, k) => !G.rescued.has(k) && G.conns[k].reach && !G.conns[k].win);
+  $$(".tile .berry").forEach((b) => b.classList.toggle("need", need));
+  $(".gate.goal").classList.toggle("lit", ready.length > 0);
+  $("#board").classList.toggle("won", ready.length > 0);
+  $("#board").classList.toggle("aiming", !!G.aim);
+  $("#goBtn").classList.toggle("ready", ready.length > 0);
   $("#mv").textContent = G.moves;
   $("#undoBtn").disabled = !G.hist.length;
   $("#redoBtn").disabled = !G.redo.length;
   $("#resetBtn").disabled = G.moves === 0 && !G.hist.length;
-  if (conn.win && !G.wasWin) { SFX.link(); say(L.connected); }
-  G.wasWin = conn.win;
+  $$(".abil").forEach((b) => {
+    const k = b.dataset.k;
+    $(".cnt", b).textContent = state.ab[k];
+    b.classList.toggle("on", G.aim === k);
+    b.classList.toggle("used", !state.ab[k]);
+  });
+  const rk = ready.join(",");
+  if (!fresh) {
+    if (ready.length && rk !== G.wasReady) { SFX.link(); say(L.connected); }
+    else if (need && !G.wasNeed) say(L.needItem);
+  }
+  G.wasReady = rk;
+  G.wasNeed = need;
 }
 
 // ---------- 손가락 조작 ----------
@@ -515,7 +608,8 @@ function bindBoard(board) {
     const el = e.target.closest(".tile");
     if (!el) return;
     const i = G.state.cells.findIndex((t) => t && t.id === el.dataset.id);
-    const tgt = G.lv.ops.includes("s") ? E.slideTarget(G.state, i) : -1;
+    if (i < 0) return;
+    const tgt = G.lv.ops.includes("s") && !G.aim ? E.slideTarget(G.state, i) : -1;
     const d = tgt >= 0 ? [0, 1, 2, 3].find((k) => E.neighbor(G.lv.n, i, k) === tgt) : -1;
     drag = { el, i, tgt, d, x0: e.clientX, y0: e.clientY, moved: false, proj: 0, pid: e.pointerId };
     try { el.setPointerCapture(e.pointerId); } catch (err) { /* */ }
@@ -544,10 +638,17 @@ function bindBoard(board) {
     tap(d.i, d.el);
   };
   board.onpointerup = end;
-  board.onpointercancel = (e) => { if (drag) { drag.el.classList.remove("dragging"); drag.el.style.transform = ""; } drag = null; };
+  board.onpointercancel = () => { if (drag) { drag.el.classList.remove("dragging"); drag.el.style.transform = ""; } drag = null; };
 }
 function tap(i, el) {
   const t = G.state.cells[i], ops = G.lv.ops;
+  if (G.aim) {
+    const k = G.aim;
+    if (E.canUse(G.state, k, i)) return act({ t: "a", k, i });
+    G.aim = null; sync(true);
+    SFX.no();
+    return say(L.abilNo);
+  }
   if (ops.includes("r") && E.canRotate(G.state, i)) return act({ t: "r", i });
   if (ops.includes("s")) {
     const tgt = E.slideTarget(G.state, i);
@@ -555,16 +656,40 @@ function tap(i, el) {
   }
   SFX.no();
   el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake");
+  // 능력을 쓸 수 있는 칸을 그냥 누르면: 그 능력 버튼을 알려 준다
+  const k = E.ABIL.find((x) => G.state.ab[x] > 0 && ((x === "w" && t.wa) || (x === "f" && t.ob === "b") || (x === "v" && t.pit)));
+  if (k) { const b = $(`.abil[data-k="${k}"]`); b.classList.remove("hint1"); void b.offsetWidth; b.classList.add("hint1"); return say(ABIL_INFO[k].name, L.abilFirst); }
   if (ops === "r") say(t.sh ? L.cantRotate : L.cantMove);
   else say(t.sh && t.sl ? L.notNext : L.cantMove);
+}
+function pickAbility(k) {
+  if (!G.state.ab[k]) { SFX.no(); return say(L.abilEmpty); }
+  G.aim = G.aim === k ? null : k;
+  $$(".abil.pulse").forEach((b) => b.classList.remove("pulse"));
+  SFX.pop();
+  sync(true);
+  if (G.aim) say(ABIL_INFO[k].name, L["abilPick" + k.toUpperCase()]);
 }
 function act(a) {
   G.hist.push({ state: G.state, moves: G.moves });
   G.redo = [];
   G.state = E.apply(G.state, a);
   G.moves++;
+  G.aim = null;
   afterChange();
-  if (a.t === "r") SFX.turn(); else SFX.slide();
+  if (a.t === "r") SFX.turn();
+  else if (a.t === "s") SFX.slide();
+  else abilityFx(a);
+}
+function abilityFx(a) {
+  SFX.link();
+  const [x, y] = cellXY(a.i);
+  const cells = a.k === "v" ? G.state.cells.map((t, j) => (t && t.vb ? j : -1)).filter((j) => j >= 0) : [a.i];
+  $(".marks").insertAdjacentHTML("beforeend", cells.map((j) => {
+    const [cx, cy] = cellXY(j);
+    return `<span class="fx fx-${a.k}" style="left:${(cx + 0.5) * G.S}px;top:${(cy + 0.5) * G.S}px">${ABIL_INFO[a.k].fx}</span>`;
+  }).join("") + `<img class="fx-poke" src="${Poke.img(ABIL_INFO[a.k].poke)}" alt="" style="left:${(x + 0.5) * G.S}px;top:${(y + 0.5) * G.S}px">`);
+  say(L["abilDone" + a.k.toUpperCase()]);
 }
 function afterChange() {
   G.hintIds = null;
@@ -576,21 +701,21 @@ function undo() {
   if (!G.hist.length) return;
   G.redo.push({ state: G.state, moves: G.moves });
   const h = G.hist.pop();
-  G.state = h.state; G.moves = h.moves;
+  G.state = h.state; G.moves = h.moves; G.aim = null;
   afterChange(); SFX.pop();
 }
 function redo() {
   if (!G.redo.length) return;
   G.hist.push({ state: G.state, moves: G.moves });
   const h = G.redo.pop();
-  G.state = h.state; G.moves = h.moves;
+  G.state = h.state; G.moves = h.moves; G.aim = null;
   afterChange(); SFX.pop();
 }
 function reset() {
   if (G.moves === 0 && E.key(G.state) === E.key(G.init)) return;
   G.hist.push({ state: G.state, moves: G.moves });
   G.redo = [];
-  G.state = G.init; G.moves = 0;
+  G.state = G.init; G.moves = 0; G.aim = null;
   afterChange(); SFX.pop();
 }
 
@@ -598,14 +723,15 @@ function reset() {
 function manipulable() {
   const ids = new Set();
   G.state.cells.forEach((t, i) => {
-    if (!t || !t.sh) return;
-    if (G.lv.ops.includes("r") && t.rot) ids.add(t.id);
+    if (!t) return;
+    if (G.lv.ops.includes("r") && t.sh && t.rot) ids.add(t.id);
     if (G.lv.ops.includes("s") && E.slideTarget(G.state, i) >= 0) ids.add(t.id);
+    if (E.ABIL.some((k) => E.canUse(G.state, k, i))) ids.add(t.id);
   });
   return ids;
 }
 function solution() {
-  return E.solve(G.state, G.lv, { maxDepth: 14, maxStates: 150000 });
+  return E.solve(G.state, G.lv, { maxDepth: 14, maxStates: 150000, rescued: [...G.rescued] });
 }
 /** 풀이의 조작마다 그 순간 만지는 타일 id */
 function solutionIds(sol) {
@@ -614,22 +740,32 @@ function solutionIds(sol) {
   for (const a of sol.actions) { ids.add(st.cells[a.i].id); st = E.apply(st, a); }
   return ids;
 }
+function flashAbil(sol) {
+  for (const k of new Set(sol.actions.filter((a) => a.t === "a").map((a) => a.k))) {
+    const b = $(`.abil[data-k="${k}"]`);
+    if (b) { b.classList.remove("hint1"); void b.offsetWidth; b.classList.add("hint1"); }
+  }
+}
 function hint() {
-  if (G.conn.win) { say(L.alreadyOk); $("#goBtn").classList.add("ready"); return; }
+  if (readyGates().length) { say(L.alreadyOk); $("#goBtn").classList.add("ready"); return; }
   G.hint = Math.min(G.hint + 1, Store.data.settings.hintMax);
   if (G.hint >= 3 || G.hint >= Store.data.settings.hintMax) $("#skipBtn").classList.remove("hidden");
   if (G.hint === 1) {
     const ids = manipulable();
     for (const id of ids) { const el = G.els[id]; el.classList.remove("hint1"); void el.offsetWidth; el.classList.add("hint1"); }
+    $$(".abil:not(.used)").forEach((b) => { b.classList.remove("hint1"); void b.offsetWidth; b.classList.add("hint1"); });
     say(L.hint1);
     return;
   }
   const sol = solution();
   if (!sol) { say(L.hintReset); $("#resetBtn").classList.add("hint1"); setTimeout(() => $("#resetBtn") && $("#resetBtn").classList.remove("hint1"), 2500); return; }
   G.hintIds = solutionIds(sol);
-  sync();
+  sync(true);
+  flashAbil(sol);
   if (G.hint === 2) { say(L.hint2); return; }
-  showFinger(sol.actions[0]);
+  const a = sol.actions[0];
+  if (a.t === "a") { flashAbil({ actions: [a] }); showFinger({ t: "r", i: a.i }); say(ABIL_INFO[a.k].name, L.abilFirst); return; }
+  showFinger(a);
   say(L.hint3);
 }
 function showFinger(a) {
@@ -638,7 +774,7 @@ function showFinger(a) {
   const [x, y] = cellXY(a.i);
   f.style.left = (x + 0.5) * G.S + "px";
   f.style.top = (y + 0.5) * G.S + "px";
-  f.className = "finger " + (a.t === "r" ? "tapme" : "dragme");
+  f.className = "finger " + (a.t === "s" ? "dragme" : "tapme");
   if (a.t === "s") {
     const d = [0, 1, 2, 3].find((k) => E.neighbor(G.lv.n, a.i, k) === a.to);
     f.style.setProperty("--fx", E.DX[d] * G.S * 0.8 + "px");
@@ -649,17 +785,14 @@ function hideFinger() { const f = $(".finger"); if (f) f.className = "finger hid
 
 // ---------- 출발 ----------
 function center(x, y) { return [(x + 0.5) * G.S, (y + 0.5) * G.S]; }
-async function go() {
+/** 문 k 의 포켓몬이 길을 따라 걷는다. ok = 센터까지 들어가나 */
+async function walk(k, conn, ok) {
   const { lv } = G;
-  const conn = E.connect(G.state, lv);
-  G.busy = true;
-  hideFinger();
-  $(".marks").innerHTML = "";
-  $("#app").classList.add("busy");
-  const wk = $(".walker"), gate = $(".gate.start");
-  const sp = gatePos(lv.n, lv.start), gp = gatePos(lv.n, lv.goal);
+  const wk = $(".walker"), gate = $(`.gate.start[data-g="${k}"]`);
+  $("img", wk).src = Poke.img(G.pokes[k]);
+  const sp = gatePos(lv.n, G.gates[k]), gp = gatePos(lv.n, lv.goal);
   const pts = [sp].concat(conn.path.map(cellXY));
-  if (conn.win) pts.push(gp);
+  if (ok) pts.push(gp);
   const place = (p, flip) => {
     const [cx, cy] = center(p[0], p[1]);
     wk.style.left = cx + "px"; wk.style.top = cy + "px";
@@ -667,35 +800,80 @@ async function go() {
   };
   wk.style.transition = "none";
   place(sp, false);
-  wk.classList.remove("hidden", "gone", "home");
+  wk.classList.remove("hidden", "gone", "home", "hop");
   gate.classList.add("away");
   void wk.offsetWidth;
   wk.style.transition = "";
-  if (pts.length === 1) {
-    // 첫 칸부터 안 이어짐 — 제자리에서 폴짝
-    wk.classList.add("hop");
-    markBroken([{ i: conn.startCell, d: E.SIDE[lv.start.side] }]);
+  if (pts.length === 1) return false;
+  say(en(EN.go));
+  await sleep(500);
+  const seen = new Set();
+  for (let q = 1; q < pts.length; q++) {
+    const [ax, ay] = pts[q - 1], [bx, by] = pts[q];
+    const d = by < ay ? 0 : bx > ax ? 1 : by > ay ? 2 : 3;
+    // 방향 영어(Up!·Right!)는 걸음이 빨라 다 끊겨서 뺐다 (v2026-10-19b 사용자 요청) — 걷는 동안 말은 넣지 않는다
+    place(pts[q], d === 1 ? true : d === 3 ? false : null);
+    SFX.step();
+    const i = conn.path[q - 1];
+    if (i != null && G.state.cells[i] && G.state.cells[i].cp && !seen.has(i)) {
+      seen.add(i);
+      const [cx, cy] = center(bx, by);
+      $(".marks").insertAdjacentHTML("beforeend", `<img class="fx-berry" src="assets/items/oran-berry.png" alt="" style="left:${cx}px;top:${cy}px">`);
+      SFX.pop();
+    }
+    await sleep(TEST ? 20 : 420);
+  }
+  return true;
+}
+async function go() {
+  const { lv } = G;
+  G.busy = true;
+  G.aim = null;
+  hideFinger();
+  $(".marks").innerHTML = "";
+  $("#app").classList.add("busy");
+  const ready = readyGates();
+  if (ready.length) {
+    // 이어진 친구부터 한 마리씩 센터로
+    for (const k of ready) {
+      await walk(k, G.conns[k], true);
+      $(".walker").classList.add("gone");
+      SFX.win();
+      G.rescued.add(k);
+      await sleep(600);
+      $(".walker").classList.add("hidden");
+      sync(true);
+    }
+    if (G.rescued.size === G.gates.length) return rescued();
+    say(en(EN.rescued), L.oneMore);
+    G.busy = false;
+    $("#app").classList.remove("busy");
+    return;
+  }
+  // 못 가는 경우 — 아직 구조 안 한 첫 친구로 어디까지 갈 수 있는지 보여 준다
+  const k = G.gates.findIndex((_, q) => !G.rescued.has(q));
+  const conn = G.conns[k];
+  const moved = await walk(k, conn, false);
+  if (!moved) {
+    $(".walker").classList.add("hop");
+    markBroken([{ i: conn.startCell, d: E.SIDE[G.gates[k].side] }]);
     SFX.bad();
     await say(L.noStart);
     await sleep(600);
-    return backHome();
+    return backHome(k);
   }
-  say(en(EN.go));
-  await sleep(500);
-  for (let k = 1; k < pts.length; k++) {
-    const [ax, ay] = pts[k - 1], [bx, by] = pts[k];
-    const d = by < ay ? 0 : bx > ax ? 1 : by > ay ? 2 : 3;
-    // 방향 영어(Up!·Right!)는 걸음이 빨라 다 끊겨서 뺐다 (v2026-10-19b 사용자 요청)
-    place(pts[k], d === 1 ? true : d === 3 ? false : null);
-    SFX.step();
-    await sleep(TEST ? 20 : 420);
+  if (conn.reach) {
+    // 센터까지 닿았지만 열매를 안 지나감
+    markItems(conn.missing);
+    SFX.bad();
+    await say(L.needItem);
+  } else {
+    markBroken(conn.broken);
+    SFX.bad();
+    await say(L.broken);
   }
-  if (conn.win) return rescued();
-  markBroken(conn.broken);
-  SFX.bad();
-  await say(L.broken);
   await sleep(500);
-  backHome();
+  backHome(k);
 }
 function markBroken(list) {
   const S = G.S;
@@ -705,12 +883,18 @@ function markBroken(list) {
     return `<span class="xmark" style="left:${cx}px;top:${cy}px">✕</span>`;
   }).join("");
 }
-function backHome() {
+function markItems(list) {
+  $(".marks").innerHTML = list.map((i) => {
+    const [x, y] = cellXY(i);
+    return `<span class="xmark berry-need" style="left:${(x + 0.5) * G.S}px;top:${(y + 0.5) * G.S}px">!</span>`;
+  }).join("");
+}
+function backHome(k) {
   const wk = $(".walker");
   wk.classList.add("home");
   setTimeout(() => {
     wk.classList.add("hidden"); wk.classList.remove("home", "hop");
-    $(".gate.start").classList.remove("away");
+    $(`.gate.start[data-g="${k}"]`).classList.remove("away");
     G.busy = false;
     $("#app").classList.remove("busy");
   }, TEST ? 10 : 450);
@@ -718,37 +902,38 @@ function backHome() {
 
 // ---------- 구조 성공 ----------
 async function rescued() {
-  const { lv, w, poke } = G;
-  $(".walker").classList.add("gone");
-  SFX.win();
-  await sleep(600);
+  const { lv, w, pokes } = G;
+  await sleep(200);
   const stars = G.moves <= lv.par ? 3 : G.moves <= lv.par + 3 ? 2 : 1;
   const prev = lvState(lv.no);
   setLv(lv.no, { done: true, stars: Math.max(prev.stars || 0, stars), best: Math.min(prev.best || 99, G.moves), skipped: false });
   const dex = Store.data.dex;
-  const isNew = !dex[poke];
-  dex[poke] = { n: (dex[poke] ? dex[poke].n : 0) + 1, w: w.no, at: dex[poke] ? dex[poke].at : Date.now() };
-  if (isNew) Store.data.dexOrder.push(poke);
+  const fresh = [];
+  for (const p of pokes) {
+    const isNew = !dex[p];
+    dex[p] = { n: (dex[p] ? dex[p].n : 0) + 1, w: dex[p] ? dex[p].w : w.no, at: dex[p] ? dex[p].at : Date.now() };
+    if (isNew) { Store.data.dexOrder.push(p); fresh.push(p); }
+  }
   const worldDone = lv.no === w.to && !Store.data.deco.includes(w.deco.id);
   if (worldDone) Store.data.deco.push(w.deco.id);
   Store.save();
-  const name = Poke.name(poke);
+  const names = pokes.map(Poke.name);
   const d = layer("modal result", `<div class="win-box res">
-    <div class="res-scene"><img class="res-poke" src="${Poke.img(poke)}" alt=""><span class="sparkle s1">✦</span><span class="sparkle s2">✧</span><span class="sparkle s3">✦</span></div>
-    <h2>${esc(name)} 구조 성공!</h2>
+    <div class="res-scene ${pokes.length > 1 ? "two" : ""}">${pokes.map((p) => `<img class="res-poke" src="${Poke.img(p)}" alt="">`).join("")}<span class="sparkle s1">✦</span><span class="sparkle s2">✧</span><span class="sparkle s3">✦</span></div>
+    <h2>${names.map(esc).join(" · ")} 구조 성공!</h2>
     <div class="stars">${[1, 2, 3].map((k) => `<span class="${k <= stars ? "on" : ""}">★</span>`).join("")}</div>
     <p class="res-moves">${G.moves}번 움직였어요 <small>(⭐⭐⭐ = ${lv.par}번 안에)</small></p>
-    <p class="res-dex">${isNew ? `📖 <b>도감에 새 친구!</b> ${rarBadge(poke)}` : `📖 ${esc(name)} 구조 ${dex[poke].n}번째`}</p>
+    <p class="res-dex">${pokes.map((p) => fresh.includes(p) ? `📖 <b>${esc(Poke.name(p))} 도감에 새 친구!</b> ${rarBadge(p)}` : `📖 ${esc(Poke.name(p))} 구조 ${dex[p].n}번째`).join("<br>")}</p>
     <div class="row">
       <button class="btn big primary" data-v="next">${worldDone ? "🎉 계속" : LV[lv.no + 1] && unlocked(lv.no + 1) ? "▶ 다음 레벨" : "🗺 지도로"}</button>
       <button class="btn big" data-v="again">🔁 다시</button>
       <button class="btn big" data-v="map">레벨 고르기</button>
     </div></div>`);
-  say(en(EN.rescued), name, L.saved, en(EN.stars[stars]), isNew ? L.dexNew : null);
+  say(en(EN.rescued), ...names, L.saved, en(EN.stars[stars]), fresh.length ? L.dexNew : null);
   const v = await waitPick(d);
   d.remove();
   G.busy = false;
-  if (v === "again") { G.poke = Poke.pick(w, lv.no === w.to); G.lv = null; return startLevel(lv.no); }
+  if (v === "again") { G.lv = null; return startLevel(lv.no); }
   if (v === "map") return renderLevels(w);
   if (worldDone) await worldClear(w);
   goNext(lv.no);
@@ -766,10 +951,16 @@ function goNext(no) {
 }
 async function worldClear(w) {
   const nw = window.WORLDS[w.no];
+  const last = !nw;
   const extra = `<div class="deco-get"><img src="assets/ui/deco-${w.deco.id}.png" alt=""><p>🏥 센터에 새 장식: <b>${esc(w.deco.name)}</b></p>
-    <p>${nw && nw.open ? "🗺 " + esc(nw.name) + " 지역이 열렸어요!" : "🚧 다음 지역은 곧 열려요!"}</p></div>`;
+    <p>${last ? "🏆 모든 지역의 포켓몬을 구했어요!" : nw.open ? "🗺 " + esc(nw.name) + " 지역이 열렸어요!" : "🚧 다음 지역은 곧 열려요!"}</p></div>`;
   await rocketScene(L.rocketOut, null, extra);
-  say(L.newDeco, nw && nw.open ? L.newWorld : L.soon);
+  say(L.newDeco, last ? L.allClear : nw.open ? L.newWorld : L.soon);
+  // 월드 3부터: 구조한 친구들이 행복해하는 기념 그림이 도감에 들어간다 (사용자 요청 v2026-10-24a)
+  if (MEMORY_BG[w.no]) {
+    makeMemory(w);
+    await showMemory(w.no, true);
+  }
 }
 function skipLevel() {
   const { lv } = G;
@@ -778,7 +969,7 @@ function skipLevel() {
   toast("⏭ " + L.skip);
   const w = worldOf(lv.no);
   if (lv.no === w.to && !Store.data.deco.includes(w.deco.id)) {
-    // 마지막 레벨을 넘겨도 다음 지역은 열린다 (장식은 깨야 받음)
+    // 마지막 레벨을 넘겨도 다음 지역은 열린다 (장식·기념 그림은 깨야 받음)
     return renderMap();
   }
   goNext(lv.no);
@@ -787,22 +978,78 @@ async function autoSolve() {
   const sol = solution();
   if (!sol) return toast("풀이를 못 찾았어요 — 처음부터 해 보세요");
   G.busy = true;
-  for (const a of sol.actions) { G.busy = false; act(a); G.busy = true; await sleep(450); }
+  for (const a of sol.actions) {
+    G.busy = false; act(a); G.busy = true;
+    await sleep(450);
+    // 두 친구 판: 이어진 친구는 바로 출발
+    if (G.gates.length > 1 && readyGates().length && G.rescued.size + readyGates().length < G.gates.length) {
+      G.busy = false; await go(); await waitIdle(); G.busy = true;
+    }
+  }
   G.busy = false;
   go();
+}
+function waitIdle() { return new Promise((r) => { const t = setInterval(() => { if (!G.busy) { clearInterval(t); r(); } }, 50); }); }
+
+// =====================================================================
+// 기념 그림 (월드 3~ 을 끝내면 — 구조한 친구들이 행복해하는 모습)
+// 포켓몬은 공식 도트, 배경만 Codex 그림 (포켓몬 캐릭터는 Codex 가 그리지 않는다)
+// =====================================================================
+const MEMORY_BG = { 3: "party-cave", 4: "party-snow", 5: "party-town" };
+function makeMemory(w) {
+  const dex = Store.data.dex;
+  const mine = Store.data.dexOrder.filter((n) => dex[n] && dex[n].w === w.no);
+  const rank = { l: 0, u: 1, r: 2, c: 3 };
+  // 전설·유니크 먼저, 그다음 최근에 구조한 친구 — 12마리까지
+  const pokes = mine.slice().reverse().sort((a, b) => rank[Poke.rar(a)] - rank[Poke.rar(b)]).slice(0, 12);
+  Store.data.memories[w.no] = { pokes, at: Date.now() };
+  Store.save();
+}
+/** 예전에 월드를 끝낸 기록이면 (기념 그림이 생기기 전) 지금 만들어 준다 */
+function ensureMemories() {
+  for (const w of window.WORLDS) if (MEMORY_BG[w.no] && Store.data.deco.includes(w.deco.id) && !Store.data.memories[w.no]) makeMemory(w);
+}
+function memoryHTML(wno, small) {
+  const m = Store.data.memories[wno];
+  const list = small ? m.pokes.slice(0, 5) : m.pokes;
+  const half = Math.ceil(list.length / 2);
+  const spots = list.map((p, k) => {
+    const back = k >= half && !small;
+    const row = back ? list.length - half : half;
+    const j = back ? k - half : k;
+    const x = small ? 12 + j * 19 : 8 + ((j + (back ? 0.5 : 0)) * 84) / Math.max(row, 1);
+    const y = small ? 92 : back ? 74 : 99;
+    return `<img class="mem-poke ${k % 3 === 1 ? "flip" : ""}" src="${Poke.img(p)}" alt="" style="left:${x}%;top:${y}%;animation-delay:-${(k * 0.37) % 1.2}s;${back ? "z-index:1;" : "z-index:2;"}">`;
+  }).join("");
+  const deco = small ? "" : Array.from({ length: 14 }, (_, k) => `<span class="mem-fx" style="left:${(k * 37) % 96}%;animation-delay:-${(k * 0.53) % 4}s">${["♥", "♪", "✦", "♥", "✿", "♫"][k % 6]}</span>`).join("");
+  return `<div class="mem-scene ${small ? "small" : ""}" style="background-image:url(assets/ui/${MEMORY_BG[wno]}.webp)">${deco}${spots}</div>`;
+}
+function showMemory(wno, fresh) {
+  const w = window.WORLDS[wno - 1];
+  const d = layer("modal memory", `<div class="win-box mem-box">
+    <h2>📸 ${esc(w.name)} 기념 그림</h2>
+    ${memoryHTML(wno)}
+    <p class="mem-note">${fresh ? "도감에 기념 그림이 들어갔어요!" : new Date(Store.data.memories[wno].at).toLocaleDateString("ko-KR")}</p>
+    <button class="btn big primary" data-v="ok">${fresh ? "좋아요!" : "닫기"}</button></div>`);
+  say(L.memory);
+  return waitPick(d).then(() => d.remove());
 }
 
 // =====================================================================
 // 도감
 // =====================================================================
 function renderDex() {
+  ensureMemories();
   const dex = Store.data.dex;
+  const mem = Object.keys(Store.data.memories).map(Number).sort();
   const W = window.WORLDS.filter((w) => w.open);
   const total = Store.data.dexOrder.length;
   show(`
   <div class="dex">
     <header class="bar"><button class="btn" data-a="back">◀ 처음</button><h2>📖 구조 도감</h2><span class="bar-r">${total}마리</span></header>
     <div class="dex-body">
+      ${mem.length ? `<section class="win-box dex-sec"><h3>📸 기념 그림 <small>지역을 끝내면 구조한 친구들이 모여요</small></h3>
+        <div class="mem-grid">${mem.map((no) => `<button class="mem-card" data-m="${no}">${memoryHTML(no, true)}<b>${no}. ${esc(window.WORLDS[no - 1].name)}</b></button>`).join("")}</div></section>` : ""}
       ${W.map((w) => {
         const pool = Poke.pool(w);
         const got = pool.filter((n) => dex[n] && dex[n].w === w.no).length;
@@ -814,6 +1061,8 @@ function renderDex() {
   </div>`, "screen-dex");
   $("#app").onclick = (e) => {
     if (e.target.closest("[data-a=back]")) return renderTitle();
+    const m = e.target.closest("[data-m]");
+    if (m) return showMemory(+m.dataset.m, false);
     const c = e.target.closest("[data-n]");
     if (!c) return;
     const n = +c.dataset.n, r = dex[n];
@@ -918,7 +1167,7 @@ function renderParent() {
     if (b.dataset.a === "back") renderTitle();
     if (b.dataset.a === "wipe") {
       if ($("#wipeIn").value.trim() === "초기화") {
-        Object.assign(Store.data, { levels: {}, dex: {}, dexOrder: [], deco: [], seen: {}, last: 1 });
+        Object.assign(Store.data, { levels: {}, dex: {}, dexOrder: [], deco: [], seen: {}, last: 1, memories: {} });
         Store.save(); toast("지웠어요"); renderParent();
       } else toast("'초기화' 라고 정확히 써 주세요");
     }
@@ -959,6 +1208,6 @@ window.addEventListener("online", () => checkUpdate(true));
 setInterval(() => checkUpdate(), 10 * 60000);
 
 // ---------- 시험용 손잡이 (?test) ----------
-if (TEST) window.__T = { G, Store, Update, E, LV, Poke, startLevel, renderTitle, renderMap, renderLevels, renderDex, renderCenter, renderParent, act, go, tap, hint, undo, redo, reset, skipLevel, unlocked };
+if (TEST) window.__T = { G, Store, Update, E, LV, Poke, startLevel, renderTitle, renderMap, renderLevels, renderDex, renderCenter, renderParent, act, go, tap, hint, undo, redo, reset, skipLevel, unlocked, pickAbility, readyGates, showMemory, makeMemory };
 
 renderTitle();

@@ -204,6 +204,55 @@ img { image-rendering: pixelated; -webkit-user-drag: none; }
 @keyframes tapme { 0%, 100% { transform: translate(-10%, -5%) scale(1); } 50% { transform: translate(-10%, -5%) scale(.82); } }
 @keyframes dragme { 0% { transform: translate(-10%, -5%); opacity: 1; } 70% { transform: translate(calc(-10% + var(--fx)), calc(-5% + var(--fy))); opacity: 1; } 100% { transform: translate(calc(-10% + var(--fx)), calc(-5% + var(--fy))); opacity: 0; } }
 
+/* ---------- 월드 4~5: 물 · 낭떠러지 · 다리 · 열매 · 능력 ---------- */
+.screen-game.w4 { background: #2a4a6e; }
+.screen-game.w5 { background: #6b3f2a; }
+.tile.water .blk { inset: 0; border-radius: 0; background-image: url("../assets/board/water-tile.png"); animation: shimmer 2.4s ease-in-out infinite alternate; }
+.tile.pit .blk { inset: 0; border-radius: 0; background-image: url("../assets/board/pit-tile.png"); }
+.tile.vine .blk { inset: 0; border-radius: 0; background-image: url("../assets/board/vine-tile.png"); }
+@keyframes shimmer { from { filter: brightness(.95); } to { filter: brightness(1.08); } }
+/* 능력을 쓰면 생길 길 — 흐린 점선으로 미리 보여 준다 */
+.road.ghost { opacity: .45; }
+.road.ghost .rd-o { stroke: #fff; stroke-width: 34; stroke-dasharray: 10 8; stroke-linecap: butt; }
+.road.ghost .rd-i, .road.ghost .rd-g { display: none; }
+/* 열매(체크포인트): 길 가운데 작게, 돌지 않는다 */
+.tile .berry { position: absolute; left: 30%; top: 26%; width: 40%; height: 40%; z-index: 3; pointer-events: none; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, .35)); }
+.tile .berry.pulse, .tile .berry.need { animation: berry .5s ease-in-out infinite alternate; }
+@keyframes berry { from { transform: scale(.9); } to { transform: scale(1.25); filter: drop-shadow(0 0 8px #fff36b); } }
+.xmark.berry-need { background: var(--gold); color: var(--ink); }
+.fx-berry { position: absolute; z-index: 9; width: calc(var(--S) * .45); transform: translate(-50%, -50%); animation: rise 1s ease-out forwards; pointer-events: none; }
+/* 능력 쓸 자리 고르는 중 */
+.tile.aim { z-index: 4; animation: nudge .45s ease-in-out infinite alternate; }
+.tile.aim::after { content: ""; position: absolute; inset: 2%; border-radius: 12%; box-shadow: 0 0 0 5px #7fd6ff, 0 0 16px 6px #bfe9ff; pointer-events: none; }
+.fx { position: absolute; z-index: 9; transform: translate(-50%, -50%); font-size: calc(var(--S) * .6); animation: rise 1.1s ease-out forwards; pointer-events: none; }
+.fx-poke { position: absolute; z-index: 9; width: calc(var(--S) * 1.1); transform: translate(-50%, -90%); animation: pop 1.2s ease-out forwards; pointer-events: none; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, .35)); }
+@keyframes rise { 0% { opacity: 1; margin-top: 0; } 100% { opacity: 0; margin-top: calc(var(--S) * -.8); } }
+@keyframes pop { 0% { opacity: 0; scale: .4; } 25% { opacity: 1; scale: 1.1; } 75% { opacity: 1; scale: 1; } 100% { opacity: 0; scale: 1; } }
+/* 두 친구: 구조한 문은 ✓ (모서리) */
+.gate.done .gp, .gate.done .bubble { visibility: hidden; }
+.gate.done::after { content: "✓"; position: absolute; right: 4%; top: 4%; width: 34%; height: 34%; display: flex; align-items: center; justify-content: center;
+  background: var(--green); color: #fff; border: 2px solid var(--ink); border-radius: 50%; font-weight: 700; font-size: calc(var(--S) * .2); }
+.who.two { flex-direction: column; align-items: stretch; gap: 4px; }
+.who-one { position: relative; display: flex; align-items: center; gap: 8px; }
+.who.two .who-one img { width: 52px; height: 52px; }
+.who-one.done { opacity: .55; }
+.who-one.done::after { content: "✓"; position: absolute; right: 0; top: 0; color: var(--green); font-weight: 700; font-size: 22px; }
+/* 능력 버튼 — 포켓몬 그림 + 하는 일, 남은 횟수는 모서리 */
+.abils { display: flex; gap: 8px; }
+.btn.abil { position: relative; flex: 1; display: flex; align-items: center; gap: 4px; padding: 4px 8px; min-height: 60px; background: #e7f3ff; font-size: 15px; line-height: 1.15; text-align: left; }
+.btn.abil img { width: 72px; height: 72px; margin: -12px -8px -12px -12px; flex: none; } /* 도트 둘레 빈 곳이 커서 크게 그리고 여백을 겹친다 */
+.btn.abil .cnt { position: absolute; right: -8px; top: -10px; min-width: 28px; height: 28px; border-radius: 14px; background: var(--red); color: #fff; border: 2px solid var(--ink);
+  font-style: normal; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+.btn.abil.on { background: #7fd6ff; box-shadow: 0 0 0 4px #fff, 0 0 0 7px var(--blue); }
+.btn.abil.used { opacity: .45; }
+.btn.abil.used .cnt { background: #999; }
+.btn.abil.pulse { animation: ready .6s ease-in-out infinite alternate; }
+.btn.abil.hint1 { animation: flash .5s 4 alternate; }
+
+/* 구조 성공 — 두 친구 */
+.res-scene.two .res-poke:nth-of-type(1) { left: 34%; }
+.res-scene.two .res-poke:nth-of-type(2) { left: 66%; animation-delay: .25s; }
+
 /* 오른쪽 판 */
 .panel { display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow-y: auto; scrollbar-width: none; }
 .pan-head { display: flex; align-items: center; gap: 8px; color: #fff; text-shadow: 2px 2px 0 var(--ink); }
@@ -301,3 +350,19 @@ img { image-rendering: pixelated; -webkit-user-drag: none; }
   .tools { grid-template-columns: repeat(4, 1fr); }
   .lv-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+
+/* ---------- 기념 그림 (월드 3~ 끝) — 공식 도트 + Codex 잔치 배경 ---------- */
+.mem-box { width: min(980px, 100%); padding: 10px 12px 14px; }
+.mem-scene { position: relative; width: 100%; aspect-ratio: 16 / 9; border: 3px solid var(--ink); border-radius: 10px; background: center / cover no-repeat; overflow: hidden; image-rendering: pixelated; }
+.mem-poke { position: absolute; width: clamp(84px, 15vw, 180px); transform: translate(-50%, -100%); filter: drop-shadow(0 5px 0 rgba(0, 0, 0, .3)); animation: happy .9s ease-in-out infinite; }
+.mem-poke.flip { scale: -1 1; }
+@keyframes happy { 0%, 100% { translate: 0 0; rotate: 0deg; } 30% { translate: 0 -18%; rotate: -6deg; } 60% { translate: 0 0; rotate: 4deg; } }
+.mem-fx { position: absolute; bottom: -10%; z-index: 3; color: #ff7eb3; font-size: clamp(18px, 3vw, 34px); text-shadow: 0 0 6px #fff; animation: floatup 4s linear infinite; pointer-events: none; }
+.mem-fx:nth-child(3n) { color: #ffd84a; } .mem-fx:nth-child(3n+1) { color: #8fe3ff; }
+@keyframes floatup { 0% { transform: translateY(0) scale(.8); opacity: 0; } 15% { opacity: 1; } 100% { transform: translateY(-110cqh) scale(1.2); opacity: 0; } }
+.mem-scene { container-type: size; }
+.mem-note { margin: 8px 0; font-size: 18px; }
+.mem-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.mem-card { border: 2px solid var(--ink); border-radius: 10px; background: #fff; padding: 6px; display: flex; flex-direction: column; gap: 4px; font-weight: 700; font-size: 16px; }
+.mem-scene.small { border-width: 2px; }
+.mem-scene.small .mem-poke { width: 22%; }

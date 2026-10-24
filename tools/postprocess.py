@@ -7,6 +7,8 @@
 - 장애물 묶음(3×2): 나무·바위·덤불·연못·다리·표지판 — 칸마다 잘라 흰 배경 지우고 128px PNG (다리는 칸을 꽉 채움)
 - 센터 건물: 흰 배경 지우고 192px PNG
 - 센터 장식 묶음(3×2): 화분·분수·수정 등·눈사람·깃발·벤치 — 160px 높이 PNG
+- 기념 그림 배경 3장(동굴·설산·마을 잔치): 1280 폭 webp
+- 월드 4 바닥 타일 3장(물·낭떠러지·덩굴 다리): 칸을 꽉 채우는 128px PNG
 - 앱 아이콘 180·512 (센터 건물 + 하늘색 바탕)
 없는 원본은 건너뛴다.
 """
@@ -128,6 +130,13 @@ def icons(h):
         save_png(bg.convert("RGB"), A / "ui" / f"icon-{side}.png")
 
 
+def square(src, dst, side=128):
+    if not (GEN / src).exists():
+        print("· 없음:", src)
+        return
+    save_png(Image.open(GEN / src).convert("RGB").resize((side, side), Image.LANCZOS), dst)
+
+
 def main():
     webp("region-river.png", A / "board" / "region-river.webp", 1200)
     webp("region-cave.png", A / "board" / "region-cave.webp", 1200)
@@ -135,6 +144,10 @@ def main():
     webp("title-bg.png", A / "ui" / "title-bg.webp", 1280)
     sheet("obstacles.png", ["ob-tree", "ob-rock", "ob-bush", "pond", "bridge", "sign"], A / "board", side=128, full=("bridge",))
     sheet("decor.png", ["deco-pot", "deco-fountain", "deco-crystal", "deco-snowman", "deco-bunting", "deco-bench"], A / "ui", height=160)
+    for k in ("cave", "snow", "town"):
+        webp(f"party-{k}.png", A / "ui" / f"party-{k}.webp", 1280)
+    for k in ("water", "pit", "vine"):
+        square(f"{k}-tile.png", A / "board" / f"{k}-tile.png")
     icons(house())
 
 

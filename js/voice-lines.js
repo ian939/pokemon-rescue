@@ -12,6 +12,24 @@
     introR: "길 조각을 눌러서 돌려 보세요!",
     introS: "빈칸 옆 길 조각을 밀어서 옮겨 보세요!",
     introRS: "돌리고 밀어서 길을 이어 보세요!",
+    introW: "물이 있으면 꼬부기를 누르고, 물을 눌러 다리를 놓아요!",
+    introF: "덤불이 길을 막으면 파이리를 누르고, 덤불을 눌러 태워요!",
+    introV: "낭떠러지에는 이상해씨를 누르고, 낭떠러지를 눌러 덩굴 다리를 만들어요!",
+    introK: "열매가 있는 길을 꼭 지나서 센터로 가야 해요!",
+    introM: "길 잃은 친구가 둘이에요! 둘 다 센터로 데려가요!",
+    needItem: "열매를 꼭 들러서 가야 해요!",
+    abilFirst: "버튼을 먼저 눌러 보세요!",
+    abilNo: "여기에는 쓸 수 없어요.",
+    abilEmpty: "능력을 다 썼어요.",
+    abilPickW: "물을 눌러 보세요!",
+    abilPickF: "덤불을 눌러 보세요!",
+    abilPickV: "낭떠러지를 눌러 보세요!",
+    abilDoneW: "꼬부기가 물 위에 다리를 놓았어요!",
+    abilDoneF: "파이리가 덤불을 태웠어요!",
+    abilDoneV: "이상해씨가 덩굴 다리를 만들었어요!",
+    oneMore: "한 친구 구조! 다른 친구도 데려가요!",
+    allClear: "모든 지역의 포켓몬을 구했어요! 고마워요!",
+    memory: "기념 그림이 생겼어요! 친구들이 정말 행복해해요!",
     connected: "길이 이어졌어요! 출발 버튼을 눌러요!",
     broken: "여기서 길이 끊겼어요. 다시 해 봐요!",
     noStart: "첫 칸부터 길을 이어 주세요!",
@@ -46,7 +64,9 @@
     great: "Great job!",
   };
   const EN_ALL = [].concat(EN.go, EN.rescued, EN.nums.slice(1), EN.stars.slice(1), EN.great);
-  const api = { L, EN, EN_ALL };
+  // 능력 버튼 포켓몬 이름 (파이리는 구조 포켓몬 풀에 없어서 따로 녹음)
+  const NAMES = ["꼬부기", "파이리", "이상해씨"];
+  const api = { L, EN, EN_ALL, NAMES };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.VoiceLines = api;
 })(typeof window !== "undefined" ? window : globalThis);

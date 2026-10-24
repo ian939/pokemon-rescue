@@ -72,7 +72,45 @@ const W3 = [
   { id: "L44", par: 7, kr: 3, ks: 3, dr: 3, ds: 2, tee: 3, len: [8, 11], gates: MIX },
   { id: "L45", par: 8, kr: 4, ks: 3, dr: 3, ds: 2, tee: 3, len: [8, 11], gates: MIX },
 ];
-const INTRO = { L01: "r", L02: "r", L03: "r", L16: "s", L17: "s", L18: "s", L31: "rs", L32: "rs", L33: "rs" };
+const W4 = [
+  // 월드 4 눈꽃 설산 — 회전+밀기+능력 한 가지씩. 46~48 꼬부기(물 다리) · 49~51 파이리(덤불) · 52~53 이상해씨(덩굴) 소개, 54~ 섞어서
+  // 능력 1회 = 조작 1번. 능력 소개 판(46·49·52)은 plan §3 보다 낮춤 (새 능력을 익히는 판)
+  { id: "L46", n: 5, par: 3, abil: { w: 1 }, kr: 1, ks: 1, len: [5, 7], gates: WE },
+  { id: "L47", n: 5, par: 3, abil: { w: 1 }, kr: 1, ks: 1, len: [5, 8], gates: WE },
+  { id: "L48", n: 5, par: 4, abil: { w: 1 }, kr: 2, ks: 1, tee: 1, len: [6, 8], gates: MIX },
+  { id: "L49", n: 5, par: 3, abil: { f: 1 }, kr: 1, ks: 1, len: [5, 7], gates: WE },
+  { id: "L50", n: 5, par: 4, abil: { f: 1 }, kr: 2, ks: 1, dr: 1, len: [6, 8], gates: MIX },
+  { id: "L51", n: 5, par: 5, abil: { f: 1 }, kr: 2, ks: 2, ds: 1, tee: 1, len: [6, 9], gates: MIX },
+  { id: "L52", n: 5, par: 3, abil: { v: 1 }, kr: 1, ks: 1, len: [6, 8], gates: WE },
+  { id: "L53", n: 5, par: 5, abil: { v: 1 }, kr: 2, ks: 1, dr: 1, tee: 1, len: [6, 9], gates: MIX },
+  { id: "L54", n: 6, par: 6, abil: { w: 1 }, kr: 2, ks: 2, dr: 1, ds: 1, tee: 1, len: [7, 10], gates: MIX },
+  { id: "L55", n: 6, par: 6, abil: { f: 1 }, kr: 2, ks: 2, dr: 1, tee: 1, len: [7, 10], gates: MIX },
+  { id: "L56", n: 6, par: 7, abil: { v: 1 }, kr: 3, ks: 2, dr: 1, ds: 1, tee: 2, len: [8, 11], gates: MIX },
+  { id: "L57", n: 6, par: 7, abil: { w: 1 }, kr: 3, ks: 2, dr: 1, tee: 2, len: [8, 11], gates: MIX },
+  { id: "L58", n: 6, par: 7, abil: { f: 1 }, kr: 2, ks: 2, dr: 2, ds: 1, tee: 2, len: [8, 11], gates: MIX },
+  { id: "L59", n: 6, par: 8, abil: { v: 1 }, kr: 3, ks: 2, dr: 1, ds: 1, tee: 2, len: [8, 12], gates: MIX },
+  { id: "L60", n: 6, par: 8, abil: { w: 1 }, kr: 3, ks: 2, dr: 2, ds: 1, tee: 2, len: [8, 12], gates: MIX },
+];
+const W5 = [
+  // 월드 5 포켓몬 마을 — 6×6. cp = 열매(체크포인트 — 정답 길 위 고정 칸) · starts 2 = 두 친구 · 69~ 두 능력 조합
+  { id: "L61", n: 6, par: 4, cp: 1, kr: 2, ks: 1, len: [7, 10], gates: MIX },
+  { id: "L62", n: 6, par: 5, cp: 1, kr: 2, ks: 1, dr: 1, len: [7, 10], gates: MIX },
+  { id: "L63", n: 6, par: 5, cp: 1, kr: 2, ks: 2, tee: 1, len: [8, 11], gates: MIX },
+  { id: "L64", n: 6, par: 4, starts: 2, kr: 2, ks: 1, len: [6, 9], gates: MIX },
+  { id: "L65", n: 6, par: 5, starts: 2, kr: 2, ks: 1, dr: 1, len: [6, 9], gates: MIX },
+  { id: "L66", n: 6, par: 6, starts: 2, kr: 2, ks: 2, tee: 1, len: [7, 10], gates: MIX },
+  { id: "L67", n: 6, par: 6, starts: 2, cp: 1, kr: 2, ks: 1, len: [7, 10], gates: MIX },
+  { id: "L68", n: 6, par: 7, starts: 2, kr: 3, ks: 2, dr: 1, len: [7, 10], gates: MIX },
+  { id: "L69", n: 6, par: 7, cp: 1, abil: { w: 1, f: 1 }, kr: 2, ks: 1, len: [8, 11], gates: MIX },
+  { id: "L70", n: 6, par: 7, abil: { f: 1, v: 1 }, kr: 2, ks: 1, len: [8, 11], gates: MIX },
+  { id: "L71", n: 6, par: 8, starts: 2, abil: { w: 1 }, kr: 3, ks: 2, len: [7, 10], gates: MIX },
+  { id: "L72", n: 6, par: 8, cp: 1, abil: { v: 1, w: 1 }, kr: 3, ks: 1, len: [9, 12], gates: MIX },
+  { id: "L73", n: 6, par: 8, starts: 2, cp: 1, abil: { w: 1, f: 1 }, kr: 2, ks: 2, len: [8, 11], gates: MIX },
+  { id: "L74", n: 6, par: 9, starts: 2, abil: { f: 1, v: 1 }, kr: 3, ks: 2, len: [8, 11], gates: MIX },
+  { id: "L75", n: 6, par: 10, starts: 2, cp: 1, abil: { w: 1, v: 1 }, kr: 3, ks: 2, dr: 1, len: [9, 12], gates: MIX },
+];
+const INTRO = { L01: "r", L02: "r", L03: "r", L16: "s", L17: "s", L18: "s", L31: "rs", L32: "rs", L33: "rs",
+  L46: "w", L49: "f", L52: "v", L61: "k", L64: "m" };
 
 // ---------- 난수 ----------
 function mulberry(a) {
@@ -258,6 +296,154 @@ function needsBoth(lv) {
   return true;
 }
 
+// ---------- 월드 4·5: 능력 · 열매 · 두 친구 ----------
+/** 둘째 길: 출발 칸에서 첫째 길 어딘가에 합류할 때까지 */
+function joinPath(R, n, s, onA, len) {
+  let budget = 20000, found = null;
+  const want = ri(R, len[0], len[1]);
+  const seen = new Set([s]), walk = [s];
+  function dfs(i) {
+    if (found || --budget < 0) return;
+    for (const d of shuffle(R, [0, 1, 2, 3])) {
+      const j = E.neighbor(n, i, d);
+      if (j < 0 || seen.has(j)) continue;
+      if (onA.has(j)) { if (walk.length >= len[0] && Math.abs(walk.length - want) <= 1) { found = walk.concat([j]); return; } continue; }
+      if (walk.length >= len[1]) continue;
+      seen.add(j); walk.push(j);
+      dfs(j);
+      walk.pop(); seen.delete(j);
+      if (found) return;
+    }
+  }
+  dfs(s);
+  return found;
+}
+/** 칸에 필요한 포트 모음 → 모양·방향 */
+function shapeOfPorts(set) {
+  const p = [...set].sort();
+  if (p.length === 4) return { sh: "X", r: 0 };
+  if (p.length === 3) return { sh: "T", r: [0, 1, 2, 3].find((d) => !set.has(d)) };
+  return shapeFor(p[0], p[1]);
+}
+const OBS_ADV = { 4: ["t", "r", "r"], 5: ["t", "t", "r"] };
+/**
+ * 풀린 판을 먼저 만들고 거꾸로 섞는다:
+ *   물 다리 → 물(꼬부기) · 덩굴 다리 → 낭떠러지(이상해씨) · 빈칸 → 덤불(파이리) · 돌리기·밀기 섞기
+ */
+function genAdvanced(cfg, R, world) {
+  const n = cfg.n;
+  const sides = ["N", "E", "S", "W"];
+  const goal = { side: pick(R, sides), at: ri(R, 0, n - 1) };
+  const starts = [];
+  const other = shuffle(R, sides.filter((x) => x !== goal.side));
+  for (let k = 0; k < (cfg.starts || 1); k++) starts.push({ side: other[k], at: ri(R, 0, n - 1) });
+  const g = E.gateCell(n, goal);
+  const sc = starts.map((st) => E.gateCell(n, st));
+  if (new Set(sc.concat([g])).size !== sc.length + 1) return null;
+  const A = randomPath(R, n, sc[0], g, cfg.len);
+  if (!A) return null;
+  const onA = new Set(A);
+  const paths = [A];
+  if (starts.length > 1) {
+    if (onA.has(sc[1])) return null;
+    const B = joinPath(R, n, sc[1], onA, cfg.lenB || [2, 5]);
+    if (!B) return null;
+    paths.push(B);
+  }
+  const P = new Map();
+  const add = (i, d) => { if (!P.has(i)) P.set(i, new Set()); P.get(i).add(d); };
+  paths.forEach((p) => { for (let k = 0; k + 1 < p.length; k++) { add(p[k], dirTo(n, p[k], p[k + 1])); add(p[k + 1], dirTo(n, p[k + 1], p[k])); } });
+  starts.forEach((st, k) => add(sc[k], E.SIDE[st.side]));
+  add(g, E.SIDE[goal.side]);
+  const shape = new Map();
+  for (const [i, set] of P) shape.set(i, shapeOfPorts(set));
+  const pathCells = shuffle(R, [...P.keys()]);
+  // 곁길 세갈래
+  let tees = cfg.tee || 0;
+  for (const i of pathCells) {
+    if (!tees) break;
+    const t = shape.get(i);
+    if (t.sh === "T" || t.sh === "X") continue;
+    shape.set(i, toTee(R, Object.assign({ i }, t))); tees--;
+  }
+  const tile = (i, f) => tok(shape.get(i).sh, shape.get(i).r, f);
+  const cells = new Array(n * n).fill(null);
+  const role = new Map(); // i → cp · rot · sl · fix · water · pit
+  if (cfg.cp) {
+    const mid = A.slice(2, -2).filter((i) => !sc.includes(i));
+    if (!mid.length) return null;
+    role.set(pick(R, mid), "cp");
+  }
+  const free = pathCells.filter((i) => !role.has(i));
+  free.forEach((i, k) => role.set(i, k < cfg.kr ? "rot" : k < cfg.kr + cfg.ks ? "sl" : "fix"));
+  for (const [i, ro] of role) {
+    const t = shape.get(i);
+    if (ro === "cp") cells[i] = tile(i, "k");
+    else if (ro === "rot") cells[i] = tok(t.sh, E.PERIOD[t.sh] > 1 ? (t.r + ri(R, 1, E.PERIOD[t.sh] - 1)) % 4 : t.r, "r");
+    else if (ro === "sl") cells[i] = tile(i, "s");
+    else cells[i] = tile(i, "");
+  }
+  const abil = { w: 0, f: 0, v: 0 };
+  const fixedOnA = () => A.filter((i) => role.get(i) === "fix" && !sc.includes(i) && i !== g);
+  // 꼬부기: 고정 길 한 칸 → 물
+  for (let k = 0; k < ((cfg.abil && cfg.abil.w) || 0); k++) {
+    const c = fixedOnA();
+    if (!c.length) return null;
+    const i = pick(R, c), t = shape.get(i);
+    cells[i] = "~" + t.sh + t.r; role.set(i, "water"); abil.w++;
+  }
+  // 이상해씨: 첫째 길에서 나란히 붙은 고정 칸 둘 → 낭떠러지 (한 번에 덩굴 다리)
+  for (let k = 0; k < ((cfg.abil && cfg.abil.v) || 0); k++) {
+    const fx = new Set(fixedOnA());
+    const pairs = [];
+    for (let q = 0; q + 1 < A.length; q++) if (fx.has(A[q]) && fx.has(A[q + 1])) pairs.push([A[q], A[q + 1]]);
+    if (!pairs.length) return null;
+    const gch = "abc"[k];
+    for (const i of pick(R, pairs)) { const t = shape.get(i); cells[i] = "^" + t.sh + t.r + gch; role.set(i, "pit"); }
+    abil.v++;
+  }
+  // 길 밖: 빈칸 · 곁가지 · 장애물
+  const rest = shuffle(R, [...Array(n * n).keys()].filter((i) => !P.has(i)));
+  const empty = cfg.empty || 1, ds = cfg.ds || 0, dr = cfg.dr || 0;
+  if (rest.length < empty + ds + dr) return null;
+  const obs = OBS_ADV[world];
+  rest.forEach((i, k) => {
+    if (k < empty) cells[i] = ".";
+    else if (k < empty + ds) cells[i] = tok(pick(R, ["S", "C", "T"]), ri(R, 0, 3), "s");
+    else if (k < empty + ds + dr) cells[i] = tok(pick(R, ["S", "C", "T"]), ri(R, 0, 3), "r");
+    else cells[i] = "#" + pick(R, obs);
+  });
+  const lv = { n, ops: "rsa", goal, cells, abil };
+  if (starts.length > 1) lv.starts = starts; else lv.start = starts[0];
+  // 빈칸을 돌아다니게 해서 섞기 (방금 민 타일은 다시 안 민다)
+  let st = E.makeState(lv), last = -1;
+  const steps = ri(R, cfg.ks * 2, cfg.ks * 3 + 2);
+  for (let k = 0; k < steps; k++) {
+    const acts = E.actions(st, "s").filter((a) => a.i !== last);
+    if (!acts.length) break;
+    const a = pick(R, acts);
+    last = a.to;
+    st = E.apply(st, a);
+  }
+  lv.cells = st.cells.map(E.cellToken);
+  // 파이리: 지금 빈칸(길 자리면 더 좋음) → 덤불. 태우면 다시 밀어 넣을 수 있다
+  for (let k = 0; k < ((cfg.abil && cfg.abil.f) || 0); k++) {
+    const em = lv.cells.map((c, i) => (c === "." ? i : -1)).filter((i) => i >= 0);
+    if (!em.length) return null;
+    const onPathEm = em.filter((i) => P.has(i));
+    lv.cells[pick(R, onPathEm.length ? onPathEm : em)] = "#b"; abil.f++;
+  }
+  for (const k of E.ABIL) if (!abil[k]) delete abil[k];
+  return lv;
+}
+/** 준 능력은 하나도 빠짐없이 써야 풀리나 (한 번씩 덜 주면 못 풀어야 함) */
+function needsAllAbilities(lv) {
+  for (const k of Object.keys(lv.abil || {})) {
+    const less = Object.assign({}, lv, { abil: Object.assign({}, lv.abil, { [k]: lv.abil[k] - 1 }) });
+    if (E.solve(E.makeState(less), less, { maxDepth: lv.par + 6, maxStates: 300000 })) return false;
+  }
+  return true;
+}
 // ---------- 고르기 ----------
 function finish(id, lv, maxDepth) {
   const err = E.validate(lv);
@@ -272,7 +458,7 @@ function hashId(id) { let h = 7; for (const c of id) h = (h * 31 + c.charCodeAt(
 function build(cfg, world) {
   for (let tries = 0; tries < 20000; tries++) {
     const R = mulberry(hashId(cfg.id) * 7919 + tries);
-    const lv = world === 1 ? genRotate(cfg, R) : world === 2 ? genSlide(cfg, R) : genMixed(cfg, R);
+    const lv = world === 1 ? genRotate(cfg, R) : world === 2 ? genSlide(cfg, R) : world === 3 ? genMixed(cfg, R) : genAdvanced(cfg, R, world);
     if (!lv) continue;
     const { err, sol } = finish(cfg.id, lv, cfg.par);
     if (err || sol.moves !== cfg.par) continue;
@@ -281,6 +467,12 @@ function build(cfg, world) {
       const ns = sol.actions.filter((a) => a.t === "s").length, nr = sol.moves - ns;
       if (cfg.par >= 5 && (ns < 2 || nr < 2)) continue;
       if (!needsBoth(lv)) continue;
+    }
+    if (world >= 4) {
+      lv.par = sol.moves;
+      if (cfg.kr && !sol.actions.some((a) => a.t === "r")) continue; // 돌리기가 하나도 없는 풀이는 버림
+      if (cfg.ks && !sol.actions.some((a) => a.t === "s")) continue; // 미는 조각이 있으면 밀기도 꼭 쓰게
+      if (!needsAllAbilities(lv)) continue;
     }
     // 정답 길에서 돌리거나 미는 칸이 실제로 쓰이는지 (곁가지만 만지는 풀이는 버림)
     return Object.assign(lv, { par: sol.moves, sol: sol.actions, tries });
@@ -310,6 +502,16 @@ function main() {
   for (const c of W2) add(c.id, 2, build(c, 2));
   add("L31", 3, fromHand("L31", HAND.L31));
   for (const c of W3) add(c.id, 3, build(c, 3));
+  const only = process.argv[2]; // node tools/gen-levels.js L61  → 그 레벨만 시험 삼아 만들어 본다 (파일은 안 씀)
+  if (only) {
+    const c = W4.concat(W5).find((x) => x.id === only);
+    const t1 = Date.now();
+    const lv = build(c, W4.includes(c) ? 4 : 5);
+    console.log(only, "시도", lv.tries + 1, ((Date.now() - t1) / 1000).toFixed(1) + "초", JSON.stringify(lv.sol));
+    return;
+  }
+  for (const c of W4) add(c.id, 4, build(c, 4));
+  for (const c of W5) add(c.id, 5, build(c, 5));
   for (const lv of all) { delete lv.tries; delete lv.hand; }
   all.sort((a, b) => a.no - b.no);
   const out = path.join(__dirname, "..", "data", "levels.js");

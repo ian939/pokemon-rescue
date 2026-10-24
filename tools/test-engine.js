@@ -156,13 +156,84 @@ t("레벨 검사: 처음부터 풀린 판·잘못된 플래그를 잡음", () =>
   assert.ok(E.validate(Object.assign(lv(["S1 S0r"]), { ops: "s" })).some((m) => m.includes("회전이 없는데")));
 });
 
+// ---------- 월드 4·5: 능력 · 열매 · 두 친구 ----------
+const adv = (rows, extra) => lv(rows, Object.assign({ ops: "rsa" }, extra));
+t("꼬부기: 물 → 물 다리(고정 길), 횟수 1 줄고 되돌리면 그대로", () => {
+  const L0 = adv(["S1 ~S1 S1"], { abil: { w: 1 } });
+  const s0 = E.makeState(L0);
+  assert.ok(!E.connect(s0, L0).win);
+  assert.ok(E.canUse(s0, "w", 1) && !E.canUse(s0, "w", 0) && !E.canUse(s0, "f", 1));
+  const s1 = E.apply(s0, { t: "a", k: "w", i: 1 });
+  assert.ok(E.connect(s1, L0).win);
+  assert.strictEqual(s1.ab.w, 0);
+  assert.ok(s1.cells[1].wb && !s1.cells[1].rot && !s1.cells[1].sl);
+  assert.strictEqual(s0.ab.w, 1); // 원래 상태(= 되돌리기 기록)는 그대로
+  assert.throws(() => E.apply(s1, { t: "a", k: "w", i: 1 }));
+});
+t("파이리: 덤불만 태움(바위·나무 안 됨) → 빈칸, 밀어 넣을 수 있음", () => {
+  const L0 = adv(["S1 #b S1", "#t S1s #r"], { abil: { f: 1 } });
+  const s0 = E.makeState(L0);
+  assert.ok(E.canUse(s0, "f", 1) && !E.canUse(s0, "f", 3) && !E.canUse(s0, "f", 5));
+  const s1 = E.apply(s0, { t: "a", k: "f", i: 1 });
+  assert.strictEqual(s1.cells[1], null);
+  const s2 = E.apply(s1, { t: "s", i: 4, to: 1 });
+  assert.ok(E.connect(s2, L0).win);
+  assert.strictEqual(E.solve(s0, L0).moves, 2);
+});
+t("이상해씨: 같은 글자 낭떠러지가 한 번에 덩굴 다리", () => {
+  const L0 = adv(["S1 ^S1a ^S1a S1"], { abil: { v: 1 } });
+  const s0 = E.makeState(L0);
+  assert.strictEqual(E.actions(s0, "a").length, 1); // 한 무리에 조작 하나
+  const s1 = E.apply(s0, { t: "a", k: "v", i: 2 });
+  assert.ok(s1.cells[1].vb && s1.cells[2].vb);
+  assert.ok(E.connect(s1, L0).win);
+});
+t("능력 횟수가 0 이면 못 씀 · 능력 없이 못 푸는 판은 solve 가 null", () => {
+  const L0 = adv(["S1 ~S1 S1"], { abil: { w: 0 } });
+  assert.strictEqual(E.actions(E.makeState(L0), "rsa").length, 0);
+  assert.strictEqual(E.solve(E.makeState(L0), L0), null);
+});
+t("열매: 센터에 닿아도 열매 칸이 길에 없으면 실패(reach 만), 지나가면 성공", () => {
+  const L0 = adv(["S1 S1 S1", "#t C0k C3"], {});
+  const c = E.connect(E.makeState(L0), L0);
+  assert.ok(c.reach && !c.win);
+  assert.deepStrictEqual(c.missing, [4]);
+  const L1 = adv(["C2 #t C1", "C0k S1 C3"], {}); // 아래로 내려가 열매를 지나 다시 올라와 센터로
+  const c1 = E.connect(E.makeState(L1), L1);
+  assert.ok(c1.win);
+  assert.ok(c1.path.includes(4)); // 걸어가는 길이 열매를 지난다
+});
+t("두 친구: 이어지는 대로 한 마리씩 — 둘 다 구조해야 끝", () => {
+  // 왼쪽 친구는 첫 칸을, 아래 친구는 마지막 칸을 돌려야 이어진다 (센터 앞은 세갈래)
+  const L0 = adv(["S0r S1 T0", "#t #t S0", "#t #t S1r"], { ops: "r", start: undefined, starts: [{ side: "W", at: 0 }, { side: "S", at: 2 }] });
+  const s0 = E.makeState(L0);
+  assert.deepStrictEqual(E.wins(s0, L0), [false, false]);
+  assert.deepStrictEqual(E.validate(L0), []);
+  const s1 = E.apply(s0, { t: "r", i: 0 });
+  assert.deepStrictEqual(E.wins(s1, L0), [true, false]);
+  assert.strictEqual(E.solve(s0, L0).moves, 2);
+});
+t("두 친구 솔버: 서로 다른 때 이어지는 판도 풂 (구조한 친구는 끝)", () => {
+  // 가운데 곡선 하나를 먼저 왼쪽 친구 쪽(W·N)으로, 구조한 뒤 오른쪽 친구 쪽(E·N)으로 — 동시에는 못 이음
+  const L0 = adv(["#t S0 #t", "S1 C2r S1", "#t #t #t"], { start: undefined, starts: [{ side: "W", at: 1 }, { side: "E", at: 1 }], goal: { side: "N", at: 1 } });
+  const r = E.solve(E.makeState(L0), L0);
+  assert.strictEqual(r.moves, 2);
+  assert.strictEqual(E.solve(E.makeState(L0), L0, { rescued: [0, 1] }).moves, 0);
+});
+t("레벨 검사: 능력 없는 레벨에 물 · 물이 있는데 꼬부기 없음을 잡음", () => {
+  assert.ok(E.validate(lv(["S1 ~S1 S1"], { ops: "rs" })).some((m) => m.includes("능력이 없는 레벨")));
+  assert.ok(E.validate(adv(["S1 ~S1 S1"], {})).some((m) => m.includes("꼬부기")));
+});
+
 // ---------- 레벨 전부 ----------
 const RANGE = {}; // plan §3 월드별 세부 난이도 (최소 조작 수)
 [[1, 3, 1, 2], [4, 8, 2, 3], [9, 12, 3, 4], [13, 15, 4, 5], [16, 18, 1, 2], [19, 23, 2, 4], [24, 27, 3, 5], [28, 30, 4, 6],
-  [31, 33, 2, 2], [34, 38, 3, 5], [39, 42, 5, 7], [43, 45, 6, 8]]
+  [31, 33, 2, 2], [34, 38, 3, 5], [39, 42, 5, 7], [43, 45, 6, 8],
+  // 월드 4·5 (plan §0.5-3 — 능력 소개 판은 낮춤)
+  [46, 48, 3, 4], [49, 53, 3, 5], [54, 57, 6, 7], [58, 60, 7, 8], [61, 63, 4, 5], [64, 68, 4, 7], [69, 72, 7, 8], [73, 75, 8, 10]]
   .forEach(([a, b, lo, hi]) => { for (let i = a; i <= b; i++) RANGE[i] = [lo, hi]; });
-t("레벨 번호 1~45 빠짐없이", () => {
-  assert.deepStrictEqual(LEVELS.map((l) => l.no), Array.from({ length: 45 }, (_, i) => i + 1));
+t("레벨 번호 1~75 빠짐없이", () => {
+  assert.deepStrictEqual(LEVELS.map((l) => l.no), Array.from({ length: 75 }, (_, i) => i + 1));
 });
 for (const L0 of LEVELS) {
   t(`${L0.id}: 정의·par·풀이`, () => {
@@ -176,16 +247,35 @@ for (const L0 of LEVELS) {
     assert.strictEqual(r.moves, L0.par, "저장된 par 와 솔버 결과가 다름");
     const [lo, hi] = RANGE[L0.no];
     assert.ok(L0.par >= lo && L0.par <= hi, `par ${L0.par} 가 범위 ${lo}~${hi} 밖`);
-    // 저장된 풀이(손가락 안내·자동 풀기에 씀)가 실제로 합법이고 풀린다
+    // 저장된 풀이(손가락 안내·자동 풀기에 씀)가 실제로 합법이고 풀린다 (두 친구면 이어질 때마다 구조)
     let s = st;
+    const res = new Set();
     for (const a of L0.sol) {
-      const ok = E.actions(s, L0.ops).some((x) => x.t === a.t && x.i === a.i && x.to === a.to);
+      const ok = E.actions(s, L0.ops).some((x) => x.t === a.t && x.i === a.i && x.to === a.to && x.k === a.k);
       assert.ok(ok, "풀이에 불법 조작 " + JSON.stringify(a));
       s = E.apply(s, a);
+      E.wins(s, L0).forEach((w, k) => { if (w) res.add(k); });
     }
-    assert.ok(E.connect(s, L0).win, "저장된 풀이로 안 풀림");
-    // 크기: 월드 1 = 4×4, 월드 2 = 4×4 → 5×5, 월드 3 = 5×5
-    assert.ok(L0.world === 1 ? L0.n === 4 : L0.world === 2 ? L0.n === (L0.no <= 23 ? 4 : 5) : L0.n === 5);
+    assert.strictEqual(res.size, E.startsOf(L0).length, "저장된 풀이로 안 풀림");
+    // 크기: 월드 1 = 4×4, 월드 2 = 4×4 → 5×5, 월드 3 = 5×5, 월드 4 = 5×5 → 6×6, 월드 5 = 6×6
+    const size = { 1: 4, 2: L0.no <= 23 ? 4 : 5, 3: 5, 4: L0.no <= 53 ? 5 : 6, 5: 6 }[L0.world];
+    assert.strictEqual(L0.n, size);
+    // 월드 4 이전에는 능력을 요구하지 않는다 (plan §12)
+    if (L0.world < 4) assert.ok(!L0.ops.includes("a") && !L0.abil);
+    if (L0.world >= 4) {
+      assert.strictEqual(L0.ops, "rsa");
+      // 준 능력은 모두 써야 풀림 (하나 덜 주면 못 풂) · 풀이에 능력이 다 들어 있음
+      for (const k of Object.keys(L0.abil || {})) {
+        const less = Object.assign({}, L0, { abil: Object.assign({}, L0.abil, { [k]: L0.abil[k] - 1 }) });
+        assert.strictEqual(E.solve(E.makeState(less), less, { maxDepth: L0.par + 6, maxStates: 300000 }), null, k + " 없이도 풀림");
+        assert.ok(L0.sol.some((a) => a.t === "a" && a.k === k));
+      }
+      // 월드 4 = 능력 한 가지씩, 월드 5 의 69~ 는 두 가지
+      if (L0.world === 4) assert.strictEqual(Object.keys(L0.abil).length, 1);
+      if (L0.no >= 69 && L0.no !== 71) assert.ok(Object.keys(L0.abil).length >= 1);
+      if (L0.no >= 61 && L0.no <= 63) assert.ok(st.cells.some((c) => c && c.cp), "61~63 은 열매");
+      if (L0.no >= 64 && L0.no <= 68) assert.strictEqual(E.startsOf(L0).length, 2, "64~68 은 두 친구");
+    }
     if (L0.ops === "rs") {
       for (const ops of ["r", "s"]) assert.strictEqual(E.solve(st, Object.assign({}, L0, { ops }), { maxDepth: 20 }), null, ops + " 만으로 풀림");
       const ns = L0.sol.filter((a) => a.t === "s").length;

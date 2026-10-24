@@ -1,21 +1,26 @@
 {
  "styles": {
   "pixel": "Style: 2D pixel art like the overworld maps of classic 2000s handheld monster-collecting RPGs, limited bright palette, crisp dark 1-pixel outlines, soft cheerful colors, flat even lighting, clean readable shapes. No text, no letters, no numbers, no creatures, no animals, no people, no characters.",
-  "item": "Style: crisp pixel art game sprites like the overworld objects of classic 2000s handheld monster-collecting RPGs, chunky readable shapes, bright cheerful palette, dark 1-pixel outline, simple two-tone shading, each object fully inside its own grid cell with generous empty margin, plain solid pure white background. No text, no letters, no numbers, no creatures, no animals, no people, no characters."
+  "item": "Style: crisp pixel art game sprites like the overworld objects of classic 2000s handheld monster-collecting RPGs, chunky readable shapes, bright cheerful palette, dark 1-pixel outline, simple two-tone shading, each object fully inside its own grid cell with generous empty margin, plain solid pure white background. No text, no letters, no numbers, no creatures, no animals, no people, no characters.",
+  "tile": "Style: 2D pixel art like the overworld maps of classic 2000s handheld monster-collecting RPGs, limited bright palette, crisp dark 1-pixel details, flat even lighting. The texture fills the whole square image edge to edge with no border, no frame, no margin and no white background. No text, no letters, no creatures, no animals, no people, no characters."
  },
  "items": [
   {
    "id": "region-river",
    "phase": 1,
    "tone": "pixel",
-   "refs": ["assets/board/region-forest.webp"],
+   "refs": [
+    "assets/board/region-forest.webp"
+   ],
    "prompt": "A wide landscape image with a 2:1 aspect ratio: a top-down pixel art game map of a sunny riverside meadow used as the floor of a puzzle board game. Bright short green grass with a subtle checkered grass-tile texture fills the whole image, tiny flowers, reeds and pebbles spread evenly, a sparkling blue river with lily pads and sandy banks runs only along the very left and right edges. The middle area stays open, flat and low-contrast so that square puzzle tiles can be placed on top. No big objects in the middle, no path, no border frame."
   },
   {
    "id": "region-cave",
    "phase": 1,
    "tone": "pixel",
-   "refs": ["assets/board/region-forest.webp"],
+   "refs": [
+    "assets/board/region-forest.webp"
+   ],
    "prompt": "A wide landscape image with a 2:1 aspect ratio: a top-down pixel art game map of the floor of a glittering crystal cave used as the floor of a puzzle board game. Smooth brownish-purple stone ground with a subtle checkered tile texture fills the whole image, tiny pebbles and small glowing crystal shards spread evenly, rocky cave walls with purple and blue crystal clusters only along the very left and right edges. The middle area stays open, flat and low-contrast so that square puzzle tiles can be placed on top. No big objects in the middle, no path, no border frame."
   },
   {
@@ -34,14 +39,18 @@
    "id": "obstacles",
    "phase": 2,
    "tone": "item",
-   "refs": ["assets/board/region-forest.webp"],
+   "refs": [
+    "assets/board/region-forest.webp"
+   ],
    "prompt": "A square sprite sheet image arranged as a strict 3 columns by 2 rows grid of six separate game objects, each seen from a slightly top-down three-quarter view and drawn to fill about 80 percent of its cell. Row 1: a round leafy green tree with a short brown trunk; a big grey boulder rock; a thorny dark-green bush with small red berries. Row 2: a small round blue pond with a lily pad; a short square wooden plank bridge section seen from directly above with planks running vertically; a small wooden signpost with a blank board."
   },
   {
    "id": "center-house",
    "phase": 2,
    "tone": "item",
-   "refs": ["assets/board/region-forest.webp"],
+   "refs": [
+    "assets/board/region-forest.webp"
+   ],
    "prompt": "A single game object centered on a square image: a small cute healing clinic building seen from a slightly top-down three-quarter front view, white walls, a bright red roof, a big round emblem on the roof that is half red and half white with a black band, glass double doors at the front, a small welcome mat. The building fills about 85 percent of the image."
   },
   {
@@ -49,6 +58,51 @@
    "phase": 2,
    "tone": "item",
    "prompt": "A square sprite sheet image arranged as a strict 3 columns by 2 rows grid of six separate cozy room decoration objects, each seen from a slightly top-down three-quarter front view and drawn to fill about 75 percent of its cell. Row 1: a big clay flowerpot with colorful blooming flowers; a small round stone water fountain with splashing water; a glowing purple crystal lamp on a small stand. Row 2: a cute snowman with a scarf; a string of colorful festival bunting flags on two short poles; a wooden park bench."
+  },
+  {
+   "id": "party-cave",
+   "phase": 1,
+   "tone": "pixel",
+   "refs": [
+    "assets/board/region-cave.webp"
+   ],
+   "prompt": "A wide 16:9 pixel art scene for a children's game: a cozy celebration party inside a glittering crystal cave. Glowing purple and blue crystal clusters along the cave walls at the top and sides, warm paper lanterns and colorful bunting flags strung across the top, a small table with a big strawberry cake and fruit at the far left edge, sparkles and confetti floating in the air. The lower two thirds of the image is an open, flat, evenly lit floor area with no objects at all, so that many small characters can stand on it later. No text, no letters, no creatures, no animals, no people, no characters."
+  },
+  {
+   "id": "party-snow",
+   "phase": 1,
+   "tone": "pixel",
+   "refs": [
+    "assets/board/region-ice.webp"
+   ],
+   "prompt": "A wide 16:9 pixel art scene for a children's game: a warm celebration at a snowy mountain hot spring at dusk. Snow-covered pine trees and snowy peaks along the top, a small steaming hot spring pool at the far right edge, glowing lanterns on poles, gently falling snowflakes, a cozy campfire at the far left edge. The lower two thirds of the image is an open, flat, evenly lit floor area with no objects at all, so that many small characters can stand on it later. No text, no letters, no creatures, no animals, no people, no characters."
+  },
+  {
+   "id": "party-town",
+   "phase": 1,
+   "tone": "pixel",
+   "refs": [
+    "assets/board/region-town.webp"
+   ],
+   "prompt": "A wide 16:9 pixel art scene for a children's game: a joyful village festival in a town plaza in the evening. Red-roofed houses along the top, colorful bunting flags and balloons strung across, bright fireworks bursting in the sky, small food stalls at the far left and far right edges. The lower two thirds of the image is an open, flat, evenly lit floor area with no objects at all, so that many small characters can stand on it later. No text, no letters, no creatures, no animals, no people, no characters."
+  },
+  {
+   "id": "water-tile",
+   "phase": 1,
+   "tone": "tile",
+   "prompt": "A single square top-down game floor tile: clear bright blue water with small white ripples and a few sparkles, seamless repeating water texture."
+  },
+  {
+   "id": "pit-tile",
+   "phase": 1,
+   "tone": "tile",
+   "prompt": "A single square top-down game floor tile: a deep dark crevasse in icy rocky ground, the dark gap runs through the middle of the whole square, light snowy rock edges on both sides of the gap."
+  },
+  {
+   "id": "vine-tile",
+   "phase": 1,
+   "tone": "tile",
+   "prompt": "A single square top-down game floor tile: a sturdy bridge woven from thick green leafy vines, the vines run vertically from the top edge to the bottom edge, small leaves and tiny flowers on it, seen from directly above."
   }
  ]
 }

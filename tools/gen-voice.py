@@ -6,7 +6,7 @@
     python tools/gen-voice.py --all    # 전부 다시
 
 녹음하는 말 (node 로 js 파일을 읽어 모은다)
-  · 한국어: js/voice-lines.js 의 L 문장 · 열린 월드(js/worlds.js open)의 구조 포켓몬 이름
+  · 한국어: js/voice-lines.js 의 L 문장 · NAMES(능력 포켓몬) · 열린 월드(js/worlds.js open)의 구조 포켓몬 이름
   · 영어: js/voice-lines.js 의 EN_ALL (방향 · Rescued! · 숫자 · 별)
 목소리: 한국어 ko-KR-SunHiNeural · "옹" 든 로켓단 말 ko-KR-InJoonNeural · 영어 en-US-AnaNeural
 결과: assets/voice/<열쇠 md5 10자>.mp3 + assets/voice/voice.js (window.VOICE = { 열쇠: 파일 })
@@ -46,7 +46,7 @@ def key(s):
 def collect():
     js = r"""
     const V = require('./js/voice-lines.js'), W = require('./js/worlds.js'), P = require('./data/pokemon.js');
-    const ko = new Set(Object.values(V.L));
+    const ko = new Set(Object.values(V.L)); V.NAMES.forEach(n => ko.add(n));
     W.WORLDS.filter(w => w.open).forEach(w => {
       ko.add(w.name); ko.add(w.deco.name);
       P.types.forEach((t, i) => { if (t.split('·').some(x => w.types.includes(x))) ko.add(P.names[i]); });
