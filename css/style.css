@@ -103,7 +103,7 @@ img { image-rendering: pixelated; -webkit-user-drag: none; }
 .map-box { position: relative; flex: 1; min-height: 0; container-type: size; }
 /* 그림 전체가 보이는 16:9 상자(contain) — 월드 자리 %가 그림과 맞고 버튼이 화면 밖으로 안 나간다. 남는 곳은 바다색 */
 .map-art { position: absolute; left: 50%; top: 50%; width: min(100cqw, 177.78cqh); height: min(100cqh, 56.25cqw); transform: translate(-50%, -50%);
-  background: url("../assets/ui/worldmap.webp") center / 100% 100% no-repeat; image-rendering: pixelated; }
+  background: url("../assets/ui/worldmap7.webp") center / 100% 100% no-repeat; image-rendering: pixelated; }
 .wnode { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 2px;
   background: var(--paper); border: var(--line) solid var(--ink); border-radius: 14px; padding: 6px 10px 6px; box-shadow: 0 5px 0 var(--ink); min-width: 120px; }
 .wnode:active { transform: translate(-50%, calc(-50% + 3px)); box-shadow: 0 2px 0 var(--ink); }
@@ -175,12 +175,12 @@ img { image-rendering: pixelated; -webkit-user-drag: none; }
 .btn.hint1 { animation: flash .5s 4 alternate; }
 
 /* 문 — 출발(길 잃은 포켓몬) · 센터 */
-.gate { position: absolute; width: var(--S); height: var(--S); z-index: 3; }
+.gate { position: absolute; width: var(--G); height: var(--G); z-index: 3; } /* 문 = 바깥 테두리 두께만 한 상자 (보통 1칸, 폰 7×7 은 0.6칸) */
 .gate .road { z-index: 0; }
 .gate .gp { position: absolute; left: 6%; top: -4%; width: 88%; z-index: 1; filter: drop-shadow(0 3px 0 rgba(0, 0, 0, .35)); animation: bob .8s ease-in-out infinite alternate; }
 .gate.away .gp, .gate.away .bubble { visibility: hidden; }
-.bubble { position: absolute; right: -4%; top: -14%; z-index: 2; width: 38%; height: 38%; display: flex; align-items: center; justify-content: center;
-  background: #fff; border: 2px solid var(--ink); border-radius: 50%; font-weight: 700; font-size: calc(var(--S) * .24); }
+.bubble { position: absolute; right: -4%; top: -14%; z-index: 2; width: 38%; height: 38%; min-width: 18px; min-height: 18px; display: flex; align-items: center; justify-content: center;
+  background: #fff; border: 2px solid var(--ink); border-radius: 50%; font-weight: 700; font-size: calc(var(--G) * .24); }
 .gate.lit .bubble::after { content: "!"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: var(--gold); border-radius: 50%; }
 .gate .house { position: absolute; inset: -12% -12% 0; width: 124%; z-index: 1; filter: drop-shadow(0 4px 0 rgba(0, 0, 0, .35)); }
 .gate.goal.lit .house { animation: bob .6s ease-in-out infinite alternate; }
@@ -207,6 +207,17 @@ img { image-rendering: pixelated; -webkit-user-drag: none; }
 /* ---------- 월드 4~5: 물 · 낭떠러지 · 다리 · 열매 · 능력 ---------- */
 .screen-game.w4 { background: #2a4a6e; }
 .screen-game.w5 { background: #6b3f2a; }
+.screen-game.w6 { background: #3a1a12; }
+.screen-game.w7 { background: #221d4a; }
+/* 세 친구 · 능력 셋: 오른쪽 판이 넘치지 않게 작게 */
+.who.three { padding: 6px 8px; gap: 2px; }
+.who.three .who-one img { width: 40px; height: 40px; }
+.who.three .who-one b { font-size: 16px; }
+.who.three .rar { display: none; }
+.abils.n3 { gap: 6px; }
+.abils.n3 .btn.abil { padding: 4px; justify-content: center; }
+.abils.n3 .btn.abil span { display: none; }
+.abils.n3 .btn.abil img { margin: -12px; }
 .tile.water .blk { inset: 0; border-radius: 0; background-image: url("../assets/board/water-tile.png"); animation: shimmer 2.4s ease-in-out infinite alternate; }
 .tile.pit .blk { inset: 0; border-radius: 0; background-image: url("../assets/board/pit-tile.png"); }
 .tile.vine .blk { inset: 0; border-radius: 0; background-image: url("../assets/board/vine-tile.png"); }

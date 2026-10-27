@@ -259,7 +259,8 @@ function renderTitle() {
 // 지도 · 레벨 고르기
 // =====================================================================
 // 지도 그림(worldmap.webp) 위 월드 자리 (%)
-const MAP_POS = [[20, 64], [44, 76], [51, 44], [52, 20], [84, 22]];
+// 지도 그림(worldmap7.webp) 위 월드 자리 (%) — 숲·강·동굴·설산·마을·화산·하늘성
+const MAP_POS = [[14, 68], [38, 76], [40, 46], [24, 18], [57, 18], [75, 52], [88, 20]];
 function renderMap() {
   const W = window.WORLDS;
   show(`
@@ -339,7 +340,7 @@ const ABIL_INFO = {
   f: { poke: 4, name: "파이리", what: "덤불 태우기", fx: "🔥" },
   v: { poke: 1, name: "이상해씨", what: "덩굴 다리", fx: "🌿" },
 };
-const INTRO_SAY = { r: "introR", s: "introS", rs: "introRS", w: "introW", f: "introF", v: "introV", k: "introK", m: "introM" };
+const INTRO_SAY = { r: "introR", s: "introS", rs: "introRS", w: "introW", f: "introF", v: "introV", k: "introK", m: "introM", m3: "introM3", k2: "introK2" };
 function startLevel(no) {
   const lv = LV[no], w = worldOf(no);
   Store.data.last = no; Store.save();
@@ -384,7 +385,7 @@ function introGuide() {
     $(`.abil[data-k="${lv.intro}"]`).classList.add("pulse");
     const a = lv.sol.find((x) => x.t === "a");
     if (a) showFinger({ t: "r", i: a.i });
-  } else if (lv.intro === "k") {
+  } else if (lv.intro === "k" || lv.intro === "k2") {
     $$(".tile .berry").forEach((b) => b.classList.add("pulse"));
     showFinger(lv.sol[0]);
   } else showFinger(lv.sol[0]);
@@ -400,10 +401,10 @@ function renderGame() {
     <div class="board-wrap" id="boardWrap"><div class="board" id="board"></div></div>
     <aside class="panel">
       <div class="pan-head"><button class="btn small" data-a="back" aria-label="레벨 고르기">◀</button><b>${lvLabel(lv.no)}</b><span>${esc(w.name)}</span></div>
-      <div class="win-box who ${G.pokes.length > 1 ? "two" : ""}">
+      <div class="win-box who ${G.pokes.length > 1 ? "two" : ""} ${G.pokes.length > 2 ? "three" : ""}">
         ${G.pokes.map((p, k) => `<div class="who-one" data-g="${k}"><img src="${Poke.img(p)}" alt=""><div><b>${esc(Poke.name(p))}</b>${rarBadge(p)}<small>${G.pokes.length > 1 ? "" : "길을 잃었어요"}</small></div></div>`).join("")}
       </div>
-      ${abKeys.length ? `<div class="abils">${abKeys.map((k) => `<button class="btn abil" data-k="${k}" aria-label="${ABIL_INFO[k].name} ${ABIL_INFO[k].what}">
+      ${abKeys.length ? `<div class="abils n${abKeys.length}">${abKeys.map((k) => `<button class="btn abil" data-k="${k}" aria-label="${ABIL_INFO[k].name} ${ABIL_INFO[k].what}">
         <img src="${Poke.img(ABIL_INFO[k].poke)}" alt=""><span>${ABIL_INFO[k].what}</span><i class="cnt">${ab[k]}</i></button>`).join("")}</div>` : ""}
       <div class="win-box moves"><span>움직인 횟수</span><b id="mv">0</b><small>⭐⭐⭐ = ${lv.par}번 안에${s.best ? ` · 최고 ${s.best}번` : ""}</small></div>
       <button id="goBtn" class="btn huge go" data-a="go">출발!</button>
@@ -452,7 +453,7 @@ function roadSVG(dirs, cls, rot) {
   const d = dirs.map((k) => ROAD[DIRK[k]]).join("");
   return `<svg class="road ${cls || ""}" viewBox="0 0 100 100" preserveAspectRatio="none"${rot ? ` style="transform:rotate(${rot}deg)"` : ""}><path class="rd-o" d="${d}"/><path class="rd-i" d="${d}"/><path class="rd-g" d="${d}"/></svg>`;
 }
-const OB_IMG = { t: "ob-tree", r: "ob-rock", b: "ob-bush" };
+const OB_IMG = { t: "ob-tree", r: "ob-rock", b: "ob-bush", l: "ob-lava", v: "ob-basalt", c: "ob-cloud", s: "ob-star" }; // l·v 화산, c·s 하늘성
 function gatePos(n, g) {
   const s = E.SIDE[g.side];
   if (s === 3) return [0, g.at + 1];
@@ -484,18 +485,22 @@ function buildBoard() {
   const { lv } = G;
   const n = lv.n;
   const wrap = $("#boardWrap"), board = $("#board");
-  const S = Math.floor(Math.min(wrap.clientWidth, wrap.clientHeight) / (n + 2));
+  // 바깥 테두리(문 자리) 두께 R칸: 보통 1칸, 칸이 44px 보다 작아지면 0.6칸으로 줄여 칸을 키운다 (폰 가로 7×7)
+  const room = Math.min(wrap.clientWidth, wrap.clientHeight);
+  G.R = room / (n + 2) >= 46 ? 1 : 0.6;
+  const S = Math.floor(room / (n + 2 * G.R));
   G.S = S;
   board.style.setProperty("--S", S + "px");
-  board.style.width = board.style.height = S * (n + 2) + "px";
+  board.style.setProperty("--G", G.R * S + "px");
+  board.style.width = board.style.height = Math.round(S * (n + 2 * G.R)) + "px";
   const gp = gatePos(n, lv.goal);
   const toBoard = (g) => (E.SIDE[g.side] + 2) % 4; // 문에서 판 쪽 방향
   board.innerHTML = `
-    <div class="field" style="left:${S}px;top:${S}px;width:${S * n}px;height:${S * n}px"></div>
+    <div class="field" style="left:${px(1)}px;top:${px(1)}px;width:${S * n}px;height:${S * n}px"></div>
     <div class="holes"></div>
-    ${G.gates.map((g, k) => { const sp = gatePos(n, g); return `<div class="gate start" data-g="${k}" style="left:${sp[0] * S}px;top:${sp[1] * S}px">${roadSVG([toBoard(g)], "stub")}
+    ${G.gates.map((g, k) => { return `<div class="gate start" data-g="${k}" style="${gateBox(gatePos(n, g))}">${roadSVG([toBoard(g)], "stub")}
       <img class="gp" src="${Poke.img(G.pokes[k])}" alt=""><span class="bubble">?</span></div>`; }).join("")}
-    <div class="gate goal" style="left:${gp[0] * S}px;top:${gp[1] * S}px">${roadSVG([toBoard(lv.goal)], "stub")}
+    <div class="gate goal" style="${gateBox(gp)}">${roadSVG([toBoard(lv.goal)], "stub")}
       <img class="house" src="assets/ui/center-house.png" alt=""></div>
     <div class="tiles"></div>
     <div class="marks"></div>
@@ -508,6 +513,15 @@ function buildBoard() {
   bindBoard(board);
 }
 function cellXY(i) { const n = G.lv.n; return [(i % n) + 1, Math.floor(i / n) + 1]; }
+/** 테두리 좌표(0 = 바깥 문 줄, 1..n = 칸, n+1 = 반대편 문 줄) → 왼쪽 위 픽셀 · 가운데 픽셀 */
+function px(c) { return c === 0 ? 0 : (G.R + c - 1) * G.S; }
+function span(c) { return c === 0 || c === G.lv.n + 1 ? G.R * G.S : G.S; }
+function cpx(c) { return px(c) + span(c) / 2; }
+/** 문 상자: 테두리 두께만 한 정사각형을 그 칸 줄 가운데에 */
+function gateBox(p) {
+  const gs = G.R * G.S;
+  return `left:${px(p[0]) + (span(p[0]) - gs) / 2}px;top:${px(p[1]) + (span(p[1]) - gs) / 2}px;width:${gs}px;height:${gs}px`;
+}
 /** 아직 구조 안 한 문 중 지금 출발하면 구조되는 문 */
 function readyGates() { return G.gates.map((_, k) => k).filter((k) => !G.rescued.has(k) && G.conns[k].win); }
 
@@ -542,8 +556,8 @@ function sync(fresh) {
     }
     el.style.display = "";
     const [x, y] = cellXY(i);
-    el.style.left = x * S + "px";
-    el.style.top = y * S + "px";
+    el.style.left = px(x) + "px";
+    el.style.top = px(y) + "px";
     el.classList.toggle("aim", !!(G.aim && E.canUse(state, G.aim, i)));
     if (!t.sh) return;
     const pr = G.prevR[t.id];
@@ -564,7 +578,7 @@ function sync(fresh) {
   $(".holes").innerHTML = state.cells.map((t, i) => {
     if (t) return "";
     const [x, y] = cellXY(i);
-    return `<div class="hole" style="left:${x * S}px;top:${y * S}px"></div>`;
+    return `<div class="hole" style="left:${px(x)}px;top:${px(y)}px"></div>`;
   }).join("");
   const ready = readyGates();
   G.gates.forEach((_, k) => {
@@ -687,8 +701,8 @@ function abilityFx(a) {
   const cells = a.k === "v" ? G.state.cells.map((t, j) => (t && t.vb ? j : -1)).filter((j) => j >= 0) : [a.i];
   $(".marks").insertAdjacentHTML("beforeend", cells.map((j) => {
     const [cx, cy] = cellXY(j);
-    return `<span class="fx fx-${a.k}" style="left:${(cx + 0.5) * G.S}px;top:${(cy + 0.5) * G.S}px">${ABIL_INFO[a.k].fx}</span>`;
-  }).join("") + `<img class="fx-poke" src="${Poke.img(ABIL_INFO[a.k].poke)}" alt="" style="left:${(x + 0.5) * G.S}px;top:${(y + 0.5) * G.S}px">`);
+    return `<span class="fx fx-${a.k}" style="left:${cpx(cx)}px;top:${cpx(cy)}px">${ABIL_INFO[a.k].fx}</span>`;
+  }).join("") + `<img class="fx-poke" src="${Poke.img(ABIL_INFO[a.k].poke)}" alt="" style="left:${cpx(x)}px;top:${cpx(y)}px">`);
   say(L["abilDone" + a.k.toUpperCase()]);
 }
 function afterChange() {
@@ -731,7 +745,21 @@ function manipulable() {
   return ids;
 }
 function solution() {
-  return E.solve(G.state, G.lv, { maxDepth: 14, maxStates: 150000, rescued: [...G.rescued] });
+  return storedSolution() || E.solve(G.state, G.lv, { maxDepth: 14, maxStates: 150000, rescued: [...G.rescued] });
+}
+/** 레벨에 저장된 풀이를 따라가는 중이면(처음 상태 포함) 남은 풀이 — 7×7 어려운 판은 패드에서 BFS 가 무거워서 */
+function storedSolution() {
+  const lv = G.lv;
+  const cur = E.key(G.state) + "|" + [...G.rescued].sort().join();
+  let st = G.init;
+  const res = new Set();
+  for (let m = 0; m <= lv.sol.length; m++) {
+    if (E.key(st) + "|" + [...res].sort().join() === cur) return { moves: lv.sol.length - m, actions: lv.sol.slice(m) };
+    if (m === lv.sol.length) break;
+    st = E.apply(st, lv.sol[m]);
+    E.wins(st, lv).forEach((w, k) => { if (w) res.add(k); });
+  }
+  return null;
 }
 /** 풀이의 조작마다 그 순간 만지는 타일 id */
 function solutionIds(sol) {
@@ -772,8 +800,8 @@ function showFinger(a) {
   const f = $(".finger");
   if (!f || !a) return;
   const [x, y] = cellXY(a.i);
-  f.style.left = (x + 0.5) * G.S + "px";
-  f.style.top = (y + 0.5) * G.S + "px";
+  f.style.left = cpx(x) + "px";
+  f.style.top = cpx(y) + "px";
   f.className = "finger " + (a.t === "s" ? "dragme" : "tapme");
   if (a.t === "s") {
     const d = [0, 1, 2, 3].find((k) => E.neighbor(G.lv.n, a.i, k) === a.to);
@@ -784,7 +812,7 @@ function showFinger(a) {
 function hideFinger() { const f = $(".finger"); if (f) f.className = "finger hidden"; }
 
 // ---------- 출발 ----------
-function center(x, y) { return [(x + 0.5) * G.S, (y + 0.5) * G.S]; }
+function center(x, y) { return [cpx(x), cpx(y)]; }
 /** 문 k 의 포켓몬이 길을 따라 걷는다. ok = 센터까지 들어가나 */
 async function walk(k, conn, ok) {
   const { lv } = G;
@@ -879,14 +907,14 @@ function markBroken(list) {
   const S = G.S;
   $(".marks").innerHTML = list.map(({ i, d }) => {
     const [x, y] = cellXY(i);
-    const cx = (x + 0.5 + E.DX[d] * 0.5) * S, cy = (y + 0.5 + E.DY[d] * 0.5) * S;
+    const cx = cpx(x) + E.DX[d] * 0.5 * S, cy = cpx(y) + E.DY[d] * 0.5 * S;
     return `<span class="xmark" style="left:${cx}px;top:${cy}px">✕</span>`;
   }).join("");
 }
 function markItems(list) {
   $(".marks").innerHTML = list.map((i) => {
     const [x, y] = cellXY(i);
-    return `<span class="xmark berry-need" style="left:${(x + 0.5) * G.S}px;top:${(y + 0.5) * G.S}px">!</span>`;
+    return `<span class="xmark berry-need" style="left:${cpx(x)}px;top:${cpx(y)}px">!</span>`;
   }).join("");
 }
 function backHome(k) {
@@ -995,7 +1023,7 @@ function waitIdle() { return new Promise((r) => { const t = setInterval(() => { 
 // 기념 그림 (월드 3~ 을 끝내면 — 구조한 친구들이 행복해하는 모습)
 // 포켓몬은 공식 도트, 배경만 Codex 그림 (포켓몬 캐릭터는 Codex 가 그리지 않는다)
 // =====================================================================
-const MEMORY_BG = { 3: "party-cave", 4: "party-snow", 5: "party-town" };
+const MEMORY_BG = { 3: "party-cave", 4: "party-snow", 5: "party-town", 6: "party-volcano", 7: "party-sky" };
 function makeMemory(w) {
   const dex = Store.data.dex;
   const mine = Store.data.dexOrder.filter((n) => dex[n] && dex[n].w === w.no);
@@ -1078,7 +1106,7 @@ function renderDex() {
 // 포켓몬센터
 // =====================================================================
 // 장식 자리 (%, 그림 아래쪽 가운데 기준) — 바닥 깔개 양쪽 끝
-const DECO_POS = { pot: [7, 99], fountain: [92, 99], crystal: [20, 99], snowman: [80, 99], bunting: [50, 70], bench: [66, 99] };
+const DECO_POS = { pot: [7, 99], fountain: [92, 99], crystal: [20, 99], snowman: [80, 99], bunting: [50, 70], bench: [66, 99], brazier: [33, 99], telescope: [68, 99] };
 function renderCenter() {
   const list = Store.data.dexOrder.slice(-14);
   show(`
@@ -1208,6 +1236,6 @@ window.addEventListener("online", () => checkUpdate(true));
 setInterval(() => checkUpdate(), 10 * 60000);
 
 // ---------- 시험용 손잡이 (?test) ----------
-if (TEST) window.__T = { G, Store, Update, E, LV, Poke, startLevel, renderTitle, renderMap, renderLevels, renderDex, renderCenter, renderParent, act, go, tap, hint, undo, redo, reset, skipLevel, unlocked, pickAbility, readyGates, showMemory, makeMemory };
+if (TEST) window.__T = { G, Store, Update, E, LV, Poke, startLevel, renderTitle, renderMap, renderLevels, renderDex, renderCenter, renderParent, act, go, tap, hint, undo, redo, reset, skipLevel, unlocked, pickAbility, readyGates, showMemory, makeMemory, storedSolution, solution };
 
 renderTitle();

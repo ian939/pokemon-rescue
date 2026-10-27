@@ -1,6 +1,10 @@
 /* 레벨 생성기 + 솔버 선별 → data/levels.js
  *
- *   node tools/gen-levels.js
+ *   node tools/gen-levels.js                  # 새로 추가한 레벨만 만든다 (data/levels.js 에 있는 레벨은 그대로 둔다)
+ *   node tools/gen-levels.js --redo L97,L105  # 그 레벨만 다시 만든다 (설정을 바꿨을 때)
+ *   node tools/gen-levels.js --all            # 전부 다시 — 월드 7 은 몇 시간 걸린다 (L105 한 판에 10시간)
+ *   node tools/gen-levels.js L61              # 한 레벨만 시험 삼아 만들어 본다 (파일은 안 씀)
+ * 이미 배포된 레벨이 바뀌면 아이의 별·기록이 엉뚱한 판에 붙으므로 기본은 "있는 건 그대로".
  *
  * 방법: 정답 길(출발 문 → 센터 문)을 먼저 깔고 → 나머지 칸을 장애물·곁가지로 채우고 →
  *       월드 1은 돌릴 수 있는 칸을 섞고, 월드 2는 빈칸을 무작위로 돌아다니게 해 섞고, 월드 3은 둘 다 →
@@ -109,8 +113,45 @@ const W5 = [
   { id: "L74", n: 6, par: 9, starts: 2, abil: { f: 1, v: 1 }, kr: 3, ks: 2, len: [8, 11], gates: MIX },
   { id: "L75", n: 6, par: 10, starts: 2, cp: 1, abil: { w: 1, v: 1 }, kr: 3, ks: 2, dr: 1, len: [9, 12], gates: MIX },
 ];
+// 월드 6 불꽃 화산 · 7 별빛 하늘성 — 새 규칙 없이 더 어렵게 (사용자 확정 v2026-10-25a):
+// 판 6×6 → 7×7, 최소 조작 8~14, 곁가지·세갈래·십자 늘리고, 돌리면서 밀기도 되는 조각(kb), 세 친구, 열매 둘, 능력 셋, 빈칸 둘
+const L6 = [10, 15], L7 = [10, 16];
+const W6 = [
+  { id: "L76", n: 6, par: 8, abil: { w: 1 }, kr: 3, ks: 2, kb: 1, dr: 2, ds: 1, tee: 2, cross: 1, len: [8, 12], gates: MIX },
+  { id: "L77", n: 6, par: 8, starts: 2, cp: 1, kr: 3, ks: 2, dr: 1, ds: 1, tee: 2, len: [8, 12], gates: MIX },
+  { id: "L78", n: 6, par: 9, abil: { f: 1, v: 1 }, kr: 3, ks: 2, kb: 1, dr: 1, tee: 2, cross: 1, len: [8, 12], gates: MIX },
+  { id: "L79", n: 6, par: 9, starts: 3, kr: 3, ks: 1, dr: 1, tee: 1, len: [7, 11], gates: MIX },
+  { id: "L80", n: 6, par: 10, cp: 2, abil: { w: 1 }, kr: 3, ks: 2, kb: 1, dr: 2, ds: 1, tee: 2, len: [9, 12], gates: MIX },
+  { id: "L81", n: 7, par: 10, abil: { f: 1 }, kr: 4, ks: 2, kb: 1, dr: 2, ds: 2, tee: 2, cross: 1, empty: 2, len: L6, gates: MIX },
+  { id: "L82", n: 7, par: 10, starts: 2, cp: 1, abil: { v: 1 }, kr: 3, ks: 2, kb: 1, dr: 2, ds: 1, tee: 2, len: L6, gates: MIX },
+  { id: "L83", n: 7, par: 11, starts: 3, abil: { w: 1 }, kr: 4, ks: 2, dr: 2, tee: 2, len: L6, gates: MIX },
+  { id: "L84", n: 7, par: 11, cp: 2, abil: { f: 1, v: 1 }, kr: 4, ks: 2, kb: 1, dr: 2, ds: 1, tee: 2, cross: 1, len: L6, gates: MIX },
+  { id: "L85", n: 7, par: 11, starts: 2, abil: { w: 1, f: 1, v: 1 }, kr: 3, ks: 2, kb: 1, dr: 2, ds: 1, tee: 2, len: L6, gates: MIX },
+  { id: "L86", n: 7, par: 12, starts: 3, cp: 1, kr: 4, ks: 2, kb: 1, dr: 2, tee: 2, len: L6, gates: MIX },
+  { id: "L87", n: 7, par: 12, cp: 2, abil: { w: 1, v: 1 }, kr: 4, ks: 2, kb: 2, dr: 2, ds: 2, tee: 3, cross: 1, empty: 2, len: L6, gates: MIX },
+  { id: "L88", n: 7, par: 12, starts: 2, abil: { f: 1, v: 1 }, kr: 4, ks: 3, kb: 1, dr: 2, ds: 1, tee: 2, len: L6, gates: MIX },
+  { id: "L89", n: 7, par: 13, starts: 3, cp: 1, abil: { w: 1, f: 1 }, kr: 4, ks: 2, kb: 1, dr: 2, ds: 1, tee: 3, len: L6, gates: MIX },
+  { id: "L90", n: 7, par: 13, starts: 2, cp: 2, abil: { w: 1, f: 1, v: 1 }, kr: 4, ks: 2, kb: 2, dr: 2, ds: 2, tee: 3, cross: 1, len: L6, gates: MIX },
+];
+const W7 = [
+  { id: "L91", n: 7, par: 10, starts: 2, abil: { w: 1, f: 1 }, kr: 4, ks: 2, kb: 1, dr: 2, ds: 2, tee: 2, cross: 1, len: L7, gates: MIX },
+  { id: "L92", n: 7, par: 11, cp: 2, abil: { v: 1 }, kr: 4, ks: 3, kb: 1, dr: 2, ds: 1, tee: 2, len: L7, gates: MIX },
+  { id: "L93", n: 7, par: 11, starts: 3, abil: { f: 1 }, kr: 4, ks: 2, kb: 1, dr: 2, tee: 2, len: L7, gates: MIX },
+  { id: "L94", n: 7, par: 12, starts: 2, cp: 1, abil: { w: 1, v: 1 }, kr: 4, ks: 2, kb: 2, dr: 2, ds: 2, tee: 3, cross: 1, empty: 2, len: L7, gates: MIX },
+  { id: "L95", n: 7, par: 12, abil: { w: 1, f: 1, v: 1 }, kr: 5, ks: 2, kb: 1, dr: 2, ds: 1, tee: 3, len: L7, gates: MIX },
+  { id: "L96", n: 7, par: 12, starts: 3, cp: 2, kr: 5, ks: 2, kb: 1, dr: 2, tee: 2, len: L7, gates: MIX },
+  { id: "L97", n: 7, par: 13, starts: 2, abil: { f: 1, v: 1 }, kr: 5, ks: 3, kb: 1, dr: 2, ds: 2, tee: 3, cross: 1, len: L7, gates: MIX },
+  { id: "L98", n: 7, par: 13, starts: 3, cp: 1, abil: { w: 1 }, kr: 4, ks: 3, kb: 2, dr: 2, ds: 1, tee: 3, len: L7, gates: MIX },
+  { id: "L99", n: 7, par: 13, cp: 2, abil: { w: 1, f: 1, v: 1 }, kr: 5, ks: 2, kb: 1, dr: 3, ds: 2, tee: 3, cross: 1, empty: 2, len: L7, gates: MIX },
+  { id: "L100", n: 7, par: 14, starts: 2, cp: 1, abil: { w: 1, f: 1 }, kr: 5, ks: 3, kb: 1, dr: 2, ds: 2, tee: 3, len: L7, gates: MIX },
+  { id: "L101", n: 7, par: 14, starts: 3, abil: { v: 1, f: 1 }, kr: 5, ks: 2, kb: 2, dr: 2, ds: 1, tee: 3, cross: 1, len: L7, gates: MIX },
+  { id: "L102", n: 7, par: 14, starts: 2, cp: 2, abil: { w: 1, v: 1 }, kr: 5, ks: 3, kb: 1, dr: 3, ds: 2, tee: 3, len: L7, gates: MIX },
+  { id: "L103", n: 7, par: 14, starts: 3, cp: 1, abil: { w: 1, f: 1, v: 1 }, kr: 5, ks: 2, kb: 2, dr: 2, ds: 2, tee: 3, cross: 1, len: L7, gates: MIX },
+  { id: "L104", n: 7, par: 14, starts: 3, cp: 2, abil: { f: 1, v: 1 }, kr: 5, ks: 3, kb: 2, dr: 3, ds: 2, tee: 3, cross: 1, empty: 2, len: L7, gates: MIX },
+  { id: "L105", n: 7, par: 14, starts: 3, cp: 2, abil: { w: 1, f: 1, v: 1 }, kr: 5, ks: 3, kb: 2, dr: 3, ds: 2, tee: 3, cross: 1, empty: 2, len: L7, gates: MIX },
+];
 const INTRO = { L01: "r", L02: "r", L03: "r", L16: "s", L17: "s", L18: "s", L31: "rs", L32: "rs", L33: "rs",
-  L46: "w", L49: "f", L52: "v", L61: "k", L64: "m" };
+  L46: "w", L49: "f", L52: "v", L61: "k", L64: "m", L79: "m3", L80: "k2" };
 
 // ---------- 난수 ----------
 function mulberry(a) {
@@ -325,7 +366,7 @@ function shapeOfPorts(set) {
   if (p.length === 3) return { sh: "T", r: [0, 1, 2, 3].find((d) => !set.has(d)) };
   return shapeFor(p[0], p[1]);
 }
-const OBS_ADV = { 4: ["t", "r", "r"], 5: ["t", "t", "r"] };
+const OBS_ADV = { 4: ["t", "r", "r"], 5: ["t", "t", "r"], 6: ["l", "v", "v"], 7: ["c", "c", "s"] }; // 6: 용암·화산 바위 · 7: 구름·별 수정
 /**
  * 풀린 판을 먼저 만들고 거꾸로 섞는다:
  *   물 다리 → 물(꼬부기) · 덩굴 다리 → 낭떠러지(이상해씨) · 빈칸 → 덤불(파이리) · 돌리기·밀기 섞기
@@ -344,9 +385,10 @@ function genAdvanced(cfg, R, world) {
   if (!A) return null;
   const onA = new Set(A);
   const paths = [A];
-  if (starts.length > 1) {
-    if (onA.has(sc[1])) return null;
-    const B = joinPath(R, n, sc[1], onA, cfg.lenB || [2, 5]);
+  for (let k = 1; k < starts.length; k++) {
+    const on = new Set(paths.flat());
+    if (on.has(sc[k])) return null;
+    const B = joinPath(R, n, sc[k], on, cfg.lenB || [2, 5]);
     if (!B) return null;
     paths.push(B);
   }
@@ -369,18 +411,20 @@ function genAdvanced(cfg, R, world) {
   const tile = (i, f) => tok(shape.get(i).sh, shape.get(i).r, f);
   const cells = new Array(n * n).fill(null);
   const role = new Map(); // i → cp · rot · sl · fix · water · pit
-  if (cfg.cp) {
-    const mid = A.slice(2, -2).filter((i) => !sc.includes(i));
+  for (let q = 0; q < (cfg.cp || 0); q++) {
+    const mid = A.slice(2, -2).filter((i) => !sc.includes(i) && !role.has(i));
     if (!mid.length) return null;
     role.set(pick(R, mid), "cp");
   }
   const free = pathCells.filter((i) => !role.has(i));
-  free.forEach((i, k) => role.set(i, k < cfg.kr ? "rot" : k < cfg.kr + cfg.ks ? "sl" : "fix"));
+  const kb = cfg.kb || 0;
+  free.forEach((i, k) => role.set(i, k < cfg.kr ? "rot" : k < cfg.kr + cfg.ks ? "sl" : k < cfg.kr + cfg.ks + kb ? "both" : "fix"));
   for (const [i, ro] of role) {
     const t = shape.get(i);
     if (ro === "cp") cells[i] = tile(i, "k");
     else if (ro === "rot") cells[i] = tok(t.sh, E.PERIOD[t.sh] > 1 ? (t.r + ri(R, 1, E.PERIOD[t.sh] - 1)) % 4 : t.r, "r");
     else if (ro === "sl") cells[i] = tile(i, "s");
+    else if (ro === "both") cells[i] = tok(t.sh, E.PERIOD[t.sh] > 1 ? (t.r + ri(R, 1, E.PERIOD[t.sh] - 1)) % 4 : t.r, "rs");
     else cells[i] = tile(i, "");
   }
   const abil = { w: 0, f: 0, v: 0 };
@@ -407,17 +451,19 @@ function genAdvanced(cfg, R, world) {
   const empty = cfg.empty || 1, ds = cfg.ds || 0, dr = cfg.dr || 0;
   if (rest.length < empty + ds + dr) return null;
   const obs = OBS_ADV[world];
+  const decoy = cfg.cross ? ["S", "C", "T", "X"] : ["S", "C", "T"];
   rest.forEach((i, k) => {
     if (k < empty) cells[i] = ".";
-    else if (k < empty + ds) cells[i] = tok(pick(R, ["S", "C", "T"]), ri(R, 0, 3), "s");
-    else if (k < empty + ds + dr) cells[i] = tok(pick(R, ["S", "C", "T"]), ri(R, 0, 3), "r");
+    else if (k < empty + ds) cells[i] = tok(pick(R, decoy), ri(R, 0, 3), "s");
+    else if (k < empty + ds + dr) cells[i] = tok(pick(R, decoy), ri(R, 0, 3), "r");
     else cells[i] = "#" + pick(R, obs);
   });
   const lv = { n, ops: "rsa", goal, cells, abil };
   if (starts.length > 1) lv.starts = starts; else lv.start = starts[0];
   // 빈칸을 돌아다니게 해서 섞기 (방금 민 타일은 다시 안 민다)
   let st = E.makeState(lv), last = -1;
-  const steps = ri(R, cfg.ks * 2, cfg.ks * 3 + 2);
+  const ksAll = cfg.ks + kb;
+  const steps = ri(R, ksAll * 2, ksAll * 3 + 2);
   for (let k = 0; k < steps; k++) {
     const acts = E.actions(st, "s").filter((a) => a.i !== last);
     if (!acts.length) break;
@@ -455,7 +501,18 @@ function finish(id, lv, maxDepth) {
 }
 function hashId(id) { let h = 7; for (const c of id) h = (h * 31 + c.charCodeAt(0)) | 0; return h; }
 
+const ARGS = process.argv.slice(2);
+const ALL = ARGS.includes("--all");
+const REDO = new Set(((ARGS[ARGS.indexOf("--redo") + 1] || "")).split(",").filter((x) => ARGS.includes("--redo") && x));
+let OLD = {};
+try { for (const l of require("../data/levels.js")) OLD[l.id] = l; } catch (e) { OLD = {}; }
 function build(cfg, world) {
+  if (!ALL && !REDO.has(cfg.id) && OLD[cfg.id] && !process.argv[2]?.startsWith("L")) {
+    const o = Object.assign({}, OLD[cfg.id]);
+    for (const k of ["id", "no", "world", "intro"]) delete o[k];
+    return Object.assign(o, { kept: true });
+  }
+  const t0 = Date.now();
   for (let tries = 0; tries < 20000; tries++) {
     const R = mulberry(hashId(cfg.id) * 7919 + tries);
     const lv = world === 1 ? genRotate(cfg, R) : world === 2 ? genSlide(cfg, R) : world === 3 ? genMixed(cfg, R) : genAdvanced(cfg, R, world);
@@ -475,7 +532,7 @@ function build(cfg, world) {
       if (!needsAllAbilities(lv)) continue;
     }
     // 정답 길에서 돌리거나 미는 칸이 실제로 쓰이는지 (곁가지만 만지는 풀이는 버림)
-    return Object.assign(lv, { par: sol.moves, sol: sol.actions, tries });
+    return Object.assign(lv, { par: sol.moves, sol: sol.actions, tries, t: ((Date.now() - t0) / 1000).toFixed(1) });
   }
   throw new Error(cfg.id + ": 조건에 맞는 판을 못 찾음");
 }
@@ -494,7 +551,8 @@ function main() {
   const t0 = Date.now();
   const add = (id, world, lv) => {
     all.push(Object.assign({ id, no: +id.slice(1), world }, lv, INTRO[id] ? { intro: INTRO[id] } : {}));
-    console.log(`${id} 월드${world} ${lv.n}×${lv.n} ${lv.ops} par ${lv.par}${lv.hand ? " (손)" : ` (시도 ${lv.tries + 1})`}`);
+    if (lv.t) console.log(`  (${lv.t}초)`);
+    console.log(`${id} 월드${world} ${lv.n}×${lv.n} ${lv.ops} par ${lv.par}${lv.hand ? " (손)" : lv.kept ? " (그대로)" : ` (시도 ${lv.tries + 1})`}`);
   };
   add("L01", 1, fromHand("L01", HAND.L01));
   for (const c of W1) add(c.id, 1, build(c, 1));
@@ -504,15 +562,17 @@ function main() {
   for (const c of W3) add(c.id, 3, build(c, 3));
   const only = process.argv[2]; // node tools/gen-levels.js L61  → 그 레벨만 시험 삼아 만들어 본다 (파일은 안 씀)
   if (only) {
-    const c = W4.concat(W5).find((x) => x.id === only);
+    const c = W4.concat(W5, W6, W7).find((x) => x.id === only);
     const t1 = Date.now();
-    const lv = build(c, W4.includes(c) ? 4 : 5);
+    const lv = build(c, W4.includes(c) ? 4 : W5.includes(c) ? 5 : W6.includes(c) ? 6 : 7);
     console.log(only, "시도", lv.tries + 1, ((Date.now() - t1) / 1000).toFixed(1) + "초", JSON.stringify(lv.sol));
     return;
   }
   for (const c of W4) add(c.id, 4, build(c, 4));
   for (const c of W5) add(c.id, 5, build(c, 5));
-  for (const lv of all) { delete lv.tries; delete lv.hand; }
+  for (const c of W6) add(c.id, 6, build(c, 6));
+  for (const c of W7) add(c.id, 7, build(c, 7));
+  for (const lv of all) { delete lv.tries; delete lv.hand; delete lv.t; delete lv.kept; } // t = 만드는 데 걸린 초 (기록에만)
   all.sort((a, b) => a.no - b.no);
   const out = path.join(__dirname, "..", "data", "levels.js");
   const body = all.map((l) => "  " + JSON.stringify(l)).join(",\n");

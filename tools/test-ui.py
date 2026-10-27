@@ -102,8 +102,8 @@ def play_solution(pg, drag_every=0):
         if a["t"] == "a":
             pg.click(f'.abil[data-k="{a["k"]}"]')
             tap_cell(pg, a["i"])
-        elif a["t"] == "s" and drag_every and k % drag_every == 0:
-            drag_cell(pg, a["i"], a["to"])
+        elif a["t"] == "s" and ((drag_every and k % drag_every == 0) or pg.evaluate(f"() => window.__T.G.state.cells[{a['i']}].rot")):
+            drag_cell(pg, a["i"], a["to"])  # 돌리기도 되는 조각은 탭하면 돌아가므로 밀기는 늘 끌어서
         else:
             tap_cell(pg, a["i"])
         if k < len(sol) - 1 and pg.locator("#goBtn.ready").count():
@@ -140,9 +140,9 @@ def main():
         # ---- 1. 지도 → 월드 1 → L01
         pg.click("[data-a=play]")
         pg.wait_for_selector(".wnode")
-        check(pg.locator(".wnode").count() == 5, "지도: 월드 5개")
+        check(pg.locator(".wnode").count() == 7, "지도: 월드 7개")
         check(pg.locator(".wnode.soon").count() == 0, "지도: 다섯 지역 모두 열림(곧 열려요 없음)")
-        check(pg.locator(".wnode.locked").count() == 4, "지도: 처음엔 월드 1만 들어갈 수 있음")
+        check(pg.locator(".wnode.locked").count() == 6, "지도: 처음엔 월드 1만 들어갈 수 있음")
         check(pg.locator('.wnode[data-w="3"].locked').count() == 1, "지도: 월드 3은 아직 잠김")
         check(pg.locator('.wnode[data-w="2"].locked').count() == 1, "지도: 월드 2는 아직 잠김")
         pg.screenshot(path=str(OUT / "02-map.png"))
@@ -404,13 +404,56 @@ def main():
         check(not bad, f"월드 5: L61~L75 모두 구조·별 3 {bad or ''}")
         close_modal(pg, "next")
         pg.wait_for_selector(".rocket-box")
-        check("모든 지역의 포켓몬을 구했어요" in pg.locator(".rocket-box").inner_text(), "월드 5 끝 → 깃발 장식 + 모든 지역 구출")
+        check("불꽃 화산 지역이 열렸어요" in pg.locator(".rocket-box").inner_text(), "월드 5 끝 → 깃발 장식 + 불꽃 화산 열림")
         close_modal(pg, "ok")
         pg.wait_for_selector(".mem-box")
         check(pg.locator(".mem-box .mem-poke").count() >= 10, "월드 5 끝 → 기념 그림(마을 축제)")
         pg.wait_for_timeout(300)
         pg.screenshot(path=str(OUT / "18-memory-town.png"))
         close_modal(pg, "ok")
+        pg.wait_for_selector(".rocket-box")
+        close_modal(pg, "ok")
+
+        # ---- 월드 6 불꽃 화산 · 7 별빛 하늘성 (더 어렵게)
+        pg.click('.lvbtn[data-no="76"]', force=True)
+        pg.wait_for_selector(".board .tile")
+        pg.screenshot(path=str(OUT / "24-L76.png"))
+        pg.evaluate("() => window.__T.startLevel(79)")
+        pg.wait_for_selector(".board .tile")
+        check(pg.locator(".gate.start").count() == 3 and pg.locator(".who.three .who-one").count() == 3, "L79: 길 잃은 친구 셋")
+        pg.screenshot(path=str(OUT / "24b-L79.png"))
+        pg.evaluate("() => window.__T.startLevel(80)")
+        pg.wait_for_selector(".board .tile")
+        check(pg.locator(".tile .berry").count() == 2, "L80: 열매 둘")
+        # 어려운 판 힌트: 처음 상태에서 저장된 풀이로 바로 (BFS 안 돌림)
+        pg.evaluate("() => window.__T.startLevel(90)")
+        pg.wait_for_selector(".board .tile")
+        t0 = pg.evaluate("() => { const t = performance.now(); const s = window.__T.solution(); return [performance.now() - t, s && s.moves, window.__T.G.lv.par]; }")
+        check(t0[1] == t0[2] and t0[0] < 300, f"L90 힌트 풀이가 바로 나옴 ({round(t0[0])}ms, {t0[1]}번)")
+        for no, last, label in ((76, 90, "월드 6"), (91, 105, "월드 7")):
+            bad = []
+            for q in range(no, last + 1):
+                ok, n, stars = solve_level(q, drag_every=2)
+                if not ok or stars != 3:
+                    bad.append((q, ok, stars))
+                if q in (86, 100):
+                    pg.screenshot(path=str(OUT / f"25-L{q}.png"))
+                if q < last:
+                    close_modal(pg, "map")
+            check(not bad, f"{label}: L{no}~L{last} 모두 구조·별 3 {bad or ''}")
+            close_modal(pg, "next")
+            pg.wait_for_selector(".rocket-box")
+            txt = pg.locator(".rocket-box").inner_text()
+            check(("별빛 하늘성 지역이 열렸어요" if last == 90 else "모든 지역의 포켓몬을 구했어요") in txt, f"{label} 끝 → 장식 + 다음")
+            close_modal(pg, "ok")
+            pg.wait_for_selector(".mem-box")
+            check(pg.locator(".mem-box .mem-poke").count() >= 10, f"{label} 끝 → 기념 그림")
+            pg.wait_for_timeout(300)
+            pg.screenshot(path=str(OUT / f"18-memory-{'volcano' if last == 90 else 'sky'}.png"))
+            close_modal(pg, "ok")
+            if last == 90:
+                pg.wait_for_selector(".rocket-box")
+                close_modal(pg, "ok")
         pg.wait_for_selector(".wnode")
 
         # 일부러 많이 움직이면 별이 줄어든다
@@ -430,7 +473,7 @@ def main():
         pg.evaluate("() => window.__T.renderDex()")
         cnt = pg.evaluate("() => window.__T.Store.data.dexOrder.length")
         check(pg.locator(".dcard").count() == cnt and cnt >= 10, f"도감: 구조한 친구 {cnt}마리 카드")
-        check(pg.locator(".mem-card").count() == 3, "도감: 기념 그림 3장 (동굴·설산·마을)")
+        check(pg.locator(".mem-card").count() == 5, "도감: 기념 그림 5장 (동굴·설산·마을·화산·하늘성)")
         pg.screenshot(path=str(OUT / "13-dex.png"))
         pg.locator('.mem-card[data-m="4"]').click()
         check(pg.locator(".mem-box .mem-poke").count() >= 10, "도감에서 기념 그림 다시 보기")
@@ -440,7 +483,7 @@ def main():
         close_modal(pg, "ok")
         pg.evaluate("() => window.__T.renderCenter()")
         check(pg.locator(".roam").count() >= 10, "센터: 구조한 친구들이 돌아다님")
-        check(pg.locator(".deco").count() == 5, "센터: 장식 5개 (화분·분수·수정 등·눈사람·깃발)")
+        check(pg.locator(".deco").count() == 7, "센터: 장식 7개 (화분·분수·수정 등·눈사람·깃발·화로·망원경)")
         pg.screenshot(path=str(OUT / "14-center.png"))
 
         # ---- 5. 보호자
@@ -474,7 +517,7 @@ def main():
         pg.evaluate("() => { window.__T.Store.data.settings.openAll = true; window.__T.Store.save(); }")
         for (w, h, name) in [(1024, 768, "iPad 10.2 가로"), (1180, 820, "iPad 11 가로"), (1366, 1024, "iPad 12.9 가로"), (820, 1180, "iPad 세로"), (844, 390, "폰 가로")]:
             pg.set_viewport_size({"width": w, "height": h})
-            for no in (1, 24, 40, 54, 75):
+            for no in (1, 24, 40, 54, 75, 105):
                 pg.evaluate(f"() => window.__T.startLevel({no})")
                 pg.wait_for_selector(".board .tile")
                 pg.wait_for_timeout(80)

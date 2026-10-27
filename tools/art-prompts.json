@@ -103,6 +103,60 @@
    "phase": 1,
    "tone": "tile",
    "prompt": "A single square top-down game floor tile: a sturdy bridge woven from thick green leafy vines, the vines run vertically from the top edge to the bottom edge, small leaves and tiny flowers on it, seen from directly above."
+  },
+  {
+   "id": "region-volcano",
+   "phase": 1,
+   "tone": "pixel",
+   "refs": [
+    "assets/board/region-cave.webp"
+   ],
+   "prompt": "A wide landscape image with a 2:1 aspect ratio: a top-down pixel art game map of the warm rocky ground of a volcano used as the floor of a puzzle board game. Dark reddish-brown basalt ground with a subtle checkered tile texture fills the whole image, tiny glowing embers and small pebbles spread evenly, bright orange lava streams and steaming vents only along the very left and right edges. The middle area stays open, flat and low-contrast so that square puzzle tiles can be placed on top. No big objects in the middle, no path, no border frame."
+  },
+  {
+   "id": "region-sky",
+   "phase": 1,
+   "tone": "pixel",
+   "refs": [
+    "assets/board/region-ice.webp"
+   ],
+   "prompt": "A wide landscape image with a 2:1 aspect ratio: a top-down pixel art game map of the floor of a castle courtyard floating high in a starry night sky, used as the floor of a puzzle board game. Soft lavender and pale blue marble floor with a subtle checkered tile texture fills the whole image, tiny twinkling star sparkles spread evenly, fluffy white clouds and small golden castle railings only along the very left and right edges. The middle area stays open, flat and low-contrast so that square puzzle tiles can be placed on top. No big objects in the middle, no path, no border frame."
+  },
+  {
+   "id": "party-volcano",
+   "phase": 1,
+   "tone": "pixel",
+   "refs": [
+    "assets/board/region-cave.webp"
+   ],
+   "prompt": "A wide 16:9 pixel art scene for a children's game: a joyful fire festival at the foot of a friendly volcano at night. A glowing volcano with a gentle orange plume in the background, warm paper lanterns and colorful bunting flags strung across the top, a big bonfire at the far left edge, a stone hot spring with steam at the far right edge, floating embers like fireflies. The lower two thirds of the image is an open, flat, evenly lit floor area with no objects at all, so that many small characters can stand on it later. No text, no letters, no creatures, no animals, no people, no characters."
+  },
+  {
+   "id": "party-sky",
+   "phase": 1,
+   "tone": "pixel",
+   "refs": [
+    "assets/board/region-ice.webp"
+   ],
+   "prompt": "A wide 16:9 pixel art scene for a children's game: a magical celebration on the terrace of a castle floating above the clouds at night. Shining castle towers with flags along the top, a sky full of stars with a soft aurora and shooting stars, floating glowing lanterns, golden railings and fluffy clouds at the far left and far right edges. The lower two thirds of the image is an open, flat, evenly lit floor area with no objects at all, so that many small characters can stand on it later. No text, no letters, no creatures, no animals, no people, no characters."
+  },
+  {
+   "id": "worldmap7",
+   "phase": 1,
+   "tone": "pixel",
+   "refs": [
+    "assets/ui/worldmap.webp"
+   ],
+   "prompt": "A wide 16:9 landscape image: a cheerful top-down pixel art adventure world map for a children's game, in the same style as the reference. Seven clearly separated areas connected by one winding dirt road: a green forest at bottom-left, a blue river with a small wooden bridge at bottom-center-left, a rocky cave entrance with purple crystals at center-left, a snowy mountain at top-left, a small cozy village with red-roofed houses at top-center, a smoking volcano with orange lava at center-right, and a shining castle on a floating island among white clouds at top-right. Soft blue sea around the edges. Plenty of open space around each area. No text, no labels, no markers."
+  },
+  {
+   "id": "obstacles2",
+   "phase": 1,
+   "tone": "item",
+   "refs": [
+    "assets/board/ob-rock.png"
+   ],
+   "prompt": "A square sprite sheet image arranged as a strict 3 columns by 2 rows grid of six separate game objects, each seen from a slightly top-down three-quarter view and drawn to fill about 80 percent of its cell. Row 1: a small round pool of bright glowing orange lava with a dark rock rim; a dark volcanic boulder with glowing orange cracks; a fluffy white cloud puff. Row 2: a tall glowing yellow star-shaped crystal pillar; a stone fire brazier with a cheerful flame; a brass telescope on a wooden tripod."
   }
  ]
 }

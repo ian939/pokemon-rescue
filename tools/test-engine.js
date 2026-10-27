@@ -230,12 +230,16 @@ const RANGE = {}; // plan §3 월드별 세부 난이도 (최소 조작 수)
 [[1, 3, 1, 2], [4, 8, 2, 3], [9, 12, 3, 4], [13, 15, 4, 5], [16, 18, 1, 2], [19, 23, 2, 4], [24, 27, 3, 5], [28, 30, 4, 6],
   [31, 33, 2, 2], [34, 38, 3, 5], [39, 42, 5, 7], [43, 45, 6, 8],
   // 월드 4·5 (plan §0.5-3 — 능력 소개 판은 낮춤)
-  [46, 48, 3, 4], [49, 53, 3, 5], [54, 57, 6, 7], [58, 60, 7, 8], [61, 63, 4, 5], [64, 68, 4, 7], [69, 72, 7, 8], [73, 75, 8, 10]]
+  [46, 48, 3, 4], [49, 53, 3, 5], [54, 57, 6, 7], [58, 60, 7, 8], [61, 63, 4, 5], [64, 68, 4, 7], [69, 72, 7, 8], [73, 75, 8, 10],
+  // 월드 6·7 — 새 규칙 없이 더 어렵게 (plan §0.5-4)
+  [76, 80, 8, 10], [81, 90, 10, 13], [91, 105, 10, 14]]
   .forEach(([a, b, lo, hi]) => { for (let i = a; i <= b; i++) RANGE[i] = [lo, hi]; });
-t("레벨 번호 1~75 빠짐없이", () => {
-  assert.deepStrictEqual(LEVELS.map((l) => l.no), Array.from({ length: 75 }, (_, i) => i + 1));
+t("레벨 번호 1~105 빠짐없이", () => {
+  assert.deepStrictEqual(LEVELS.map((l) => l.no), Array.from({ length: 105 }, (_, i) => i + 1));
 });
-for (const L0 of LEVELS) {
+// node tools/test-engine.js 76-105  → 그 번호 레벨만 (월드 7 은 솔버가 무거워 전체가 10분 넘게 걸린다)
+const RANGE_ARG = (process.argv[2] || "").match(/^(\d+)-(\d+)$/);
+for (const L0 of LEVELS.filter((l) => !RANGE_ARG || (l.no >= +RANGE_ARG[1] && l.no <= +RANGE_ARG[2]))) {
   t(`${L0.id}: 정의·par·풀이`, () => {
     const w = WORLDS.find((x) => L0.no >= x.from && L0.no <= x.to);
     assert.strictEqual(L0.world, w.no);
@@ -258,7 +262,7 @@ for (const L0 of LEVELS) {
     }
     assert.strictEqual(res.size, E.startsOf(L0).length, "저장된 풀이로 안 풀림");
     // 크기: 월드 1 = 4×4, 월드 2 = 4×4 → 5×5, 월드 3 = 5×5, 월드 4 = 5×5 → 6×6, 월드 5 = 6×6
-    const size = { 1: 4, 2: L0.no <= 23 ? 4 : 5, 3: 5, 4: L0.no <= 53 ? 5 : 6, 5: 6 }[L0.world];
+    const size = { 1: 4, 2: L0.no <= 23 ? 4 : 5, 3: 5, 4: L0.no <= 53 ? 5 : 6, 5: 6, 6: L0.no <= 80 ? 6 : 7, 7: 7 }[L0.world];
     assert.strictEqual(L0.n, size);
     // 월드 4 이전에는 능력을 요구하지 않는다 (plan §12)
     if (L0.world < 4) assert.ok(!L0.ops.includes("a") && !L0.abil);
@@ -272,9 +276,20 @@ for (const L0 of LEVELS) {
       }
       // 월드 4 = 능력 한 가지씩, 월드 5 의 69~ 는 두 가지
       if (L0.world === 4) assert.strictEqual(Object.keys(L0.abil).length, 1);
-      if (L0.no >= 69 && L0.no !== 71) assert.ok(Object.keys(L0.abil).length >= 1);
+      if (L0.no >= 69 && L0.no <= 75 && L0.no !== 71) assert.ok(Object.keys(L0.abil).length >= 1);
       if (L0.no >= 61 && L0.no <= 63) assert.ok(st.cells.some((c) => c && c.cp), "61~63 은 열매");
       if (L0.no >= 64 && L0.no <= 68) assert.strictEqual(E.startsOf(L0).length, 2, "64~68 은 두 친구");
+      if (L0.no === 79) assert.strictEqual(E.startsOf(L0).length, 3, "79 = 세 친구 소개");
+      if (L0.no === 80) assert.strictEqual(st.cells.filter((c) => c && c.cp).length, 2, "80 = 열매 둘 소개");
+      // 월드 6·7: 월드 5 마지막(par 10)보다 쉬워지지 않음 · 판이 어렵게 하는 장치가 있음
+      if (L0.world >= 6) {
+        assert.ok(L0.par >= 8);
+        // 어렵게 하는 장치: 친구 둘(셋이면 2점) · 열매 · 능력 두 가지 이상 · 돌리며 미는 조각 · 십자 · 7×7
+        const nst = E.startsOf(L0).length;
+        const hard = (nst >= 2) + (nst >= 3) + (st.cells.filter((c) => c && c.cp).length >= 1) + (Object.keys(L0.abil || {}).length >= 2)
+          + st.cells.some((c) => c && c.rot && c.sl) + st.cells.some((c) => c && c.sh === "X") + (L0.n >= 7);
+        assert.ok(hard >= 2, "어렵게 하는 장치가 둘 이상");
+      }
     }
     if (L0.ops === "rs") {
       for (const ops of ["r", "s"]) assert.strictEqual(E.solve(st, Object.assign({}, L0, { ops }), { maxDepth: 20 }), null, ops + " 만으로 풀림");

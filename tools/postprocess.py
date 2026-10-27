@@ -9,6 +9,7 @@
 - 센터 장식 묶음(3×2): 화분·분수·수정 등·눈사람·깃발·벤치 — 160px 높이 PNG
 - 기념 그림 배경 3장(동굴·설산·마을 잔치): 1280 폭 webp
 - 월드 4 바닥 타일 3장(물·낭떠러지·덩굴 다리): 칸을 꽉 채우는 128px PNG
+- 월드 6·7: 화산·하늘성 바닥, 잔치 배경, 7지역 지도(worldmap7), 장애물 묶음2(용암·화산 바위·구름·별 수정 + 장식 화로·망원경)
 - 앱 아이콘 180·512 (센터 건물 + 하늘색 바탕)
 없는 원본은 건너뛴다.
 """
@@ -140,12 +141,24 @@ def square(src, dst, side=128):
 def main():
     webp("region-river.png", A / "board" / "region-river.webp", 1200)
     webp("region-cave.png", A / "board" / "region-cave.webp", 1200)
-    webp("worldmap.png", A / "ui" / "worldmap.webp", 1600)
+    # (예전 5지역 지도 worldmap.png 는 worldmap7 로 바뀌어 안 씀)
     webp("title-bg.png", A / "ui" / "title-bg.webp", 1280)
     sheet("obstacles.png", ["ob-tree", "ob-rock", "ob-bush", "pond", "bridge", "sign"], A / "board", side=128, full=("bridge",))
     sheet("decor.png", ["deco-pot", "deco-fountain", "deco-crystal", "deco-snowman", "deco-bunting", "deco-bench"], A / "ui", height=160)
-    for k in ("cave", "snow", "town"):
+    for k in ("cave", "snow", "town", "volcano", "sky"):
         webp(f"party-{k}.png", A / "ui" / f"party-{k}.webp", 1280)
+    # 월드 6·7
+    webp("region-volcano.png", A / "board" / "region-volcano.webp", 1200)
+    webp("region-sky.png", A / "board" / "region-sky.webp", 1200)
+    webp("worldmap7.png", A / "ui" / "worldmap7.webp", 1600)  # 7지역 지도 (새 이름 — 패드가 옛 지도를 붙들지 않게)
+    if (GEN / "obstacles2.png").exists():
+        names = ["ob-lava", "ob-basalt", "ob-cloud", "ob-star", "deco-brazier", "deco-telescope"]
+        for im, name in zip(cells("obstacles2.png", 3, 2, 0.02), names):
+            im = trim(remove_white(im))
+            if name.startswith("ob-"):
+                save_png(fit(im, 128), A / "board" / f"{name}.png")
+            else:
+                save_png(im.resize((round(im.width * 160 / im.height), 160), Image.LANCZOS), A / "ui" / f"{name}.png")
     for k in ("water", "pit", "vine"):
         square(f"{k}-tile.png", A / "board" / f"{k}-tile.png")
     icons(house())
