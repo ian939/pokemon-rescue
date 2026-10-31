@@ -10,6 +10,8 @@
  *         k(체크포인트 열매 — 길이 꼭 지나가야 함)  w(꼬부기가 놓은 물 다리)  v(이상해씨 덩굴 다리)
  *   "~S1"  물 — 꼬부기가 쓰면 그 자리가 S1 물 다리(고정 길)가 된다
  *   "^S0a" 낭떠러지 — 이상해씨가 쓰면 같은 글자(a) 낭떠러지가 한꺼번에 덩굴 다리가 된다
+ *   z / y  (월드 8) ⚡ 스위치 무리 — 손으로는 못 돌리고 스위치 조작 { t: "z", g: "z" } 한 번에 그 무리가 모두 90°
+ *   "P2A"  (월드 9) 워프 패널 — 모양 P(입구 하나, r0 = 위), 같은 대문자(A·B) 패널 둘이 이어져 순간이동
  *   모양: S 직선(N·S) · C 곡선(N·E) · T 세갈래(E·S·W) · X 십자. 방향 r = 시계방향 90°×r
  * 능력 횟수: level.abil = { w: 꼬부기, f: 파이리, v: 이상해씨 } (월드 4~)
  * 방향 번호: 0 N(위) · 1 E(오른쪽) · 2 S(아래) · 3 W(왼쪽)
@@ -20,8 +22,8 @@
   const DX = [0, 1, 0, -1];
   const DY = [-1, 0, 1, 0];
   const SIDE = { N: 0, E: 1, S: 2, W: 3 };
-  const SHAPES = { S: [0, 2], C: [0, 1], T: [1, 2, 3], X: [0, 1, 2, 3] };
-  const PERIOD = { S: 2, C: 4, T: 4, X: 1 };
+  const SHAPES = { S: [0, 2], C: [0, 1], T: [1, 2, 3], X: [0, 1, 2, 3], P: [0] };
+  const PERIOD = { S: 2, C: 4, T: 4, X: 1, P: 4 };
   const ABIL = ["w", "f", "v"];
 
   // ---------- 토큰 ↔ 타일 ----------
@@ -32,13 +34,16 @@
     if (m) return { id, wa: { sh: m[1], r: +m[2] } };
     m = /^\^([SCTX])([0-3])([a-z])$/.exec(tok);
     if (m) return { id, pit: { sh: m[1], r: +m[2], g: m[3] } };
-    m = /^([SCTX])([0-3])([rsbkwv]*)$/.exec(tok);
+    m = /^([SCTXP])([0-3])([rsbkwvzy]*)([A-C]?)$/.exec(tok);
     if (!m) throw new Error("모르는 칸: " + tok);
     const f = m[3];
     const t = { id, sh: m[1], r: +m[2], rot: f.includes("r"), sl: f.includes("s"), br: f.includes("b") };
     if (f.includes("k")) t.cp = true;
     if (f.includes("w")) t.wb = true;
     if (f.includes("v")) t.vb = true;
+    if (f.includes("z")) t.sw = "z";
+    else if (f.includes("y")) t.sw = "y";
+    if (m[4]) t.pair = m[4];
     return t;
   }
   function cellToken(t) {
@@ -46,7 +51,7 @@
     if (t.ob) return "#" + t.ob;
     if (t.wa) return "~" + t.wa.sh + t.wa.r;
     if (t.pit) return "^" + t.pit.sh + t.pit.r + t.pit.g;
-    return t.sh + t.r + (t.rot ? "r" : "") + (t.sl ? "s" : "") + (t.br ? "b" : "") + (t.cp ? "k" : "") + (t.wb ? "w" : "") + (t.vb ? "v" : "");
+    return t.sh + t.r + (t.rot ? "r" : "") + (t.sl ? "s" : "") + (t.br ? "b" : "") + (t.cp ? "k" : "") + (t.wb ? "w" : "") + (t.vb ? "v" : "") + (t.sw || "") + (t.pair || "");
   }
   /** 레벨 → 처음 상태 (레벨 정의는 건드리지 않는다) */
   function makeState(level) {
@@ -73,9 +78,16 @@
   }
 
   // ---------- 연결 판정 ----------
-  /** 칸 a 에서 이어진 길을 따라 BFS (거리·직전 칸) */
-  function bfsFrom(state, a) {
+  /** 워프 패널 짝: 글자 → [칸, 칸] */
+  function pairsOf(state) {
+    const m = {};
+    state.cells.forEach((t, i) => { if (t && t.pair) (m[t.pair] = m[t.pair] || []).push(i); });
+    return m;
+  }
+  /** 칸 a 에서 이어진 길을 따라 BFS (거리·직전 칸). 워프 패널에 닿으면 짝 패널로 건너뛴다 (warp=false 면 안 건너뜀) */
+  function bfsFrom(state, a, warp) {
     const n = state.n, cells = state.cells;
+    const pr = warp === false ? {} : pairsOf(state);
     const dist = new Array(n * n).fill(-1), prev = new Array(n * n).fill(-1);
     const q = [a];
     dist[a] = 0;
@@ -86,6 +98,9 @@
         const j = neighbor(n, i, d);
         if (j < 0 || dist[j] >= 0 || !hasPort(cells[j], (d + 2) % 4)) continue;
         dist[j] = dist[i] + 1; prev[j] = i; q.push(j);
+      }
+      if (t && t.pair && pr[t.pair]) {
+        for (const j of pr[t.pair]) if (j !== i && dist[j] < 0) { dist[j] = dist[i] + 1; prev[j] = i; q.push(j); }
       }
     }
     return { dist, prev, order: q };
@@ -108,7 +123,8 @@
     const s = gateCell(n, st), g = gateCell(n, level.goal);
     const sd = SIDE[st.side], gd = SIDE[level.goal.side];
     let lit = [], dist = null, prev = null;
-    if (hasPort(cells[s], sd)) ({ dist, prev, order: lit } = bfsFrom(state, s));
+    const warp = !level.noWarp;
+    if (hasPort(cells[s], sd)) ({ dist, prev, order: lit } = bfsFrom(state, s, warp));
     const litSet = new Set(lit);
     const reach = litSet.has(g) && hasPort(cells[g], gd);
     const cps = [];
@@ -126,7 +142,7 @@
         const nx = todo.shift();
         path = path.concat(pathTo(b.prev, nx).slice(1));
         cur = nx;
-        b = bfsFrom(state, cur);
+        b = bfsFrom(state, cur, warp);
       }
       path = path.concat(pathTo(b.prev, g).slice(1));
     } else if (lit.length) {
@@ -141,6 +157,7 @@
         if (end === s && d === sd) continue;
         const j = neighbor(n, end, d);
         if (j >= 0 && hasPort(cells[j], (d + 2) % 4)) continue; // 이어진 쪽(왔던 길)
+        if (cells[end].pair) continue; // 워프 패널 입구는 순간이동으로 이어짐
         broken.push({ i: end, d });
       }
     }
@@ -161,6 +178,7 @@
         if (i >= 0 && isPath(cells[i]) && cells[i].sl) out.push({ t: "s", i, to: e });
       }
     });
+    if (ops.includes("z")) for (const g of ["z", "y"]) if (cells.some((t) => t && t.sw === g)) out.push({ t: "z", g });
     if (ops.includes("a") && state.ab) {
       const seenG = new Set();
       cells.forEach((t, i) => {
@@ -204,6 +222,10 @@
       for (let d = 0; d < 4; d++) if (neighbor(state.n, a.i, d) === a.to) adj = true;
       if (!adj) throw new Error("빈칸과 붙어 있지 않음 " + a.i + "→" + a.to);
       cells[a.to] = t; cells[a.i] = null;
+    } else if (a.t === "z") {
+      let any = false;
+      cells.forEach((t, j) => { if (t && t.sw === a.g) { cells[j] = Object.assign({}, t, { r: (t.r + 1) % 4 }); any = true; } });
+      if (!any) throw new Error("스위치 조각이 없음 " + a.g);
     } else if (a.t === "a") {
       if (!canUse(state, a.k, a.i)) throw new Error("능력을 쓸 수 없음 " + a.k + "@" + a.i);
       const t = cells[a.i];
@@ -225,7 +247,7 @@
       else if (t.ob) s += "#" + t.ob;
       else if (t.wa) s += "~";
       else if (t.pit) s += "^";
-      else s += t.sh + (t.r % PERIOD[t.sh]) + (t.rot ? "r" : "") + (t.sl ? "s" : "") + (t.cp ? "k" : "");
+      else s += t.sh + (t.r % PERIOD[t.sh]) + (t.rot ? "r" : "") + (t.sl ? "s" : "") + (t.cp ? "k" : "") + (t.sw || "") + (t.pair || "");
       s += ",";
     }
     if (state.ab) s += state.ab.w + "" + state.ab.f + state.ab.v;
@@ -293,13 +315,15 @@
     if (new Set(gk).size !== gk.length) err.push("문끼리 같은 자리");
     let st;
     try { st = makeState(level); } catch (e) { return [e.message]; }
-    if (!/^[rsa]+$/.test(level.ops)) err.push("ops 가 잘못됨");
+    if (!/^[rsaz]+$/.test(level.ops)) err.push("ops 가 잘못됨");
     st.cells.forEach((t, i) => {
       if (!t) return;
       if (isPath(t)) {
         if (t.rot && !level.ops.includes("r")) err.push(`칸 ${i}: 이 레벨은 회전이 없는데 돌릴 수 있게 됨`);
         if (t.sl && !level.ops.includes("s")) err.push(`칸 ${i}: 이 레벨은 밀기가 없는데 밀 수 있게 됨`);
         if ((t.br || t.cp || t.wb || t.vb) && (t.rot || t.sl)) err.push(`칸 ${i}: 다리·열매 칸은 고정이어야 함`);
+        if (t.sw && !level.ops.includes("z")) err.push(`칸 ${i}: 스위치가 없는 레벨에 ⚡ 조각`);
+        if ((t.sh === "P") !== !!t.pair) err.push(`칸 ${i}: 워프 패널은 모양 P + 짝 글자`);
       }
       if ((t.wa || t.pit) && !level.ops.includes("a")) err.push(`칸 ${i}: 능력이 없는 레벨에 물·낭떠러지`);
     });
@@ -308,6 +332,8 @@
     if (st.cells.some((t) => t && t.pit) && !ab.v) err.push("낭떠러지가 있는데 이상해씨 능력이 없음");
     if ((ab.w || ab.f || ab.v) && !level.ops.includes("a")) err.push("능력 횟수가 있는데 ops 에 a 가 없음");
     if (level.ops.includes("s") && !st.cells.some((t) => t === null) && !ab.f) err.push("밀기 레벨에 빈칸이 없음");
+    const pr = pairsOf(st);
+    for (const k in pr) if (pr[k].length !== 2) err.push(`워프 패널 ${k} 가 ${pr[k].length}개 (2개여야 함)`);
     if (wins(st, level).some(Boolean)) err.push("처음부터 풀려 있음");
     return err;
   }

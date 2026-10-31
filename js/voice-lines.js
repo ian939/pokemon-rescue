@@ -19,6 +19,12 @@
     introM: "길 잃은 친구가 둘이에요! 둘 다 센터로 데려가요!",
     introM3: "이번엔 길 잃은 친구가 셋이에요! 모두 센터로 데려가요!",
     introK2: "열매가 두 개예요! 두 열매를 모두 지나서 가요!",
+    introZ: "번개 표시 조각은 피카츄 스위치로만 돌아요! 스위치를 누르면 한꺼번에 돌아요!",
+    introZ2: "이번엔 스위치가 두 개예요! 노란 번개는 피카츄, 파란 번개는 라이츄!",
+    introP: "보라색 워프 패널에 닿으면 다른 패널로 순간이동해요!",
+    introP2: "워프 패널이 두 쌍이에요! 같은 색끼리 이어져요!",
+    switchFirst: "번개 조각은 스위치를 눌러서 돌려요!",
+    switchHint: "스위치를 눌러 볼까요?",
     needItem: "열매를 꼭 들러서 가야 해요!",
     abilFirst: "버튼을 먼저 눌러 보세요!",
     abilNo: "여기에는 쓸 수 없어요.",
@@ -67,7 +73,7 @@
   };
   const EN_ALL = [].concat(EN.go, EN.rescued, EN.nums.slice(1), EN.stars.slice(1), EN.great);
   // 능력 버튼 포켓몬 이름 (파이리는 구조 포켓몬 풀에 없어서 따로 녹음)
-  const NAMES = ["꼬부기", "파이리", "이상해씨"];
+  const NAMES = ["꼬부기", "파이리", "이상해씨", "피카츄", "라이츄"];
   const api = { L, EN, EN_ALL, NAMES };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.VoiceLines = api;

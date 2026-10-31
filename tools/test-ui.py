@@ -99,7 +99,10 @@ def play_solution(pg, drag_every=0):
     능력은 버튼을 누르고 칸을 누른다. 두 친구 판은 한 친구가 이어지면 바로 출발(마지막 조작 뒤 출발은 부르는 쪽이)"""
     sol = pg.evaluate("() => window.__T.G.lv.sol")
     for k, a in enumerate(sol):
-        if a["t"] == "a":
+        if a["t"] == "z":
+            pg.click(f'.abil.sw[data-z="{a["g"]}"]')
+            pg.wait_for_timeout(30)
+        elif a["t"] == "a":
             pg.click(f'.abil[data-k="{a["k"]}"]')
             tap_cell(pg, a["i"])
         elif a["t"] == "s" and ((drag_every and k % drag_every == 0) or pg.evaluate(f"() => window.__T.G.state.cells[{a['i']}].rot")):
@@ -140,9 +143,9 @@ def main():
         # ---- 1. 지도 → 월드 1 → L01
         pg.click("[data-a=play]")
         pg.wait_for_selector(".wnode")
-        check(pg.locator(".wnode").count() == 7, "지도: 월드 7개")
+        check(pg.locator(".wnode").count() == 9, "지도: 월드 9개")
         check(pg.locator(".wnode.soon").count() == 0, "지도: 다섯 지역 모두 열림(곧 열려요 없음)")
-        check(pg.locator(".wnode.locked").count() == 6, "지도: 처음엔 월드 1만 들어갈 수 있음")
+        check(pg.locator(".wnode.locked").count() == 8, "지도: 처음엔 월드 1만 들어갈 수 있음")
         check(pg.locator('.wnode[data-w="3"].locked').count() == 1, "지도: 월드 3은 아직 잠김")
         check(pg.locator('.wnode[data-w="2"].locked').count() == 1, "지도: 월드 2는 아직 잠김")
         pg.screenshot(path=str(OUT / "02-map.png"))
@@ -430,13 +433,42 @@ def main():
         pg.wait_for_selector(".board .tile")
         t0 = pg.evaluate("() => { const t = performance.now(); const s = window.__T.solution(); return [performance.now() - t, s && s.moves, window.__T.G.lv.par]; }")
         check(t0[1] == t0[2] and t0[0] < 300, f"L90 힌트 풀이가 바로 나옴 ({round(t0[0])}ms, {t0[1]}번)")
-        for no, last, label in ((76, 90, "월드 6"), (91, 105, "월드 7")):
+        WORLDS = ((76, 90, "월드 6", "별빛 하늘성 지역이 열렸어요", "volcano"), (91, 105, "월드 7", "번개 발전소 지역이 열렸어요", "sky"),
+                  (106, 120, "월드 8", "무지개 신전 지역이 열렸어요", "power"), (121, 135, "월드 9", "모든 지역의 포켓몬을 구했어요", "temple"))
+        for no, last, label, nxt, bg in WORLDS:
+            if no == 106:
+                # ⚡ 스위치 소개 (L106): 스위치 버튼 반짝 · ⚡ 조각은 손으로 안 돌아감 · 누르면 무리가 한꺼번에
+                pg.click('.lvbtn[data-no="106"]', force=True)
+                pg.wait_for_selector(".board .tile")
+                check(pg.locator('.abil.sw.pulse[data-z="z"]').count() == 1, "L106: 피카츄 스위치 버튼이 반짝(소개)")
+                pg.screenshot(path=str(OUT / "26-L106.png"))
+                zi = pg.evaluate("() => window.__T.G.state.cells.findIndex(t => t && t.sw === 'z' && !t.rot)")
+                tap_cell(pg, zi)
+                check(pg.evaluate("() => window.__T.G.moves") == 0 and pg.locator('.abil.sw.hint1').count() == 1, "⚡ 조각을 누르면 → 안 돌고 스위치를 알려 줌")
+                before = pg.evaluate("() => window.__T.G.state.cells.filter(t => t && t.sw === 'z').map(t => t.r)")
+                pg.click('.abil.sw[data-z="z"]')
+                after = pg.evaluate("() => window.__T.G.state.cells.filter(t => t && t.sw === 'z').map(t => t.r)")
+                check(len(before) >= 3 and all((b + 1) % 4 == a for b, a in zip(before, after)), f"스위치 한 번 → ⚡ 조각 {len(before)}개가 모두 90°")
+                pg.click("#undoBtn")
+                check(pg.evaluate("() => window.__T.G.state.cells.filter(t => t && t.sw === 'z').map(t => t.r)") == before, "되돌리기 → 스위치 전으로")
+                pg.evaluate("() => window.__T.startLevel(111)")
+                pg.wait_for_selector(".board .tile")
+                check(pg.locator(".abil.sw").count() == 2, "L111: 스위치 두 개 (피카츄·라이츄)")
+                pg.screenshot(path=str(OUT / "26b-L111.png"))
+            if no == 121:
+                pg.click('.lvbtn[data-no="121"]', force=True)
+                pg.wait_for_selector(".board .tile")
+                check(pg.locator(".tile .portal").count() == 2 and pg.locator(".tile .portal.pulse").count() == 2, "L121: 워프 패널 한 쌍이 반짝(소개)")
+                pg.screenshot(path=str(OUT / "27-L121.png"))
+                pg.evaluate("() => window.__T.startLevel(125)")
+                pg.wait_for_selector(".board .tile")
+                check(pg.locator(".tile .portal-A").count() == 2 and pg.locator(".tile .portal-B").count() == 2, "L125: 워프 패널 두 쌍")
             bad = []
             for q in range(no, last + 1):
                 ok, n, stars = solve_level(q, drag_every=2)
                 if not ok or stars != 3:
                     bad.append((q, ok, stars))
-                if q in (86, 100):
+                if q in (86, 100, 116, 130):
                     pg.screenshot(path=str(OUT / f"25-L{q}.png"))
                 if q < last:
                     close_modal(pg, "map")
@@ -444,14 +476,14 @@ def main():
             close_modal(pg, "next")
             pg.wait_for_selector(".rocket-box")
             txt = pg.locator(".rocket-box").inner_text()
-            check(("별빛 하늘성 지역이 열렸어요" if last == 90 else "모든 지역의 포켓몬을 구했어요") in txt, f"{label} 끝 → 장식 + 다음")
+            check(nxt in txt, f"{label} 끝 → 장식 + {nxt}")
             close_modal(pg, "ok")
             pg.wait_for_selector(".mem-box")
             check(pg.locator(".mem-box .mem-poke").count() >= 10, f"{label} 끝 → 기념 그림")
             pg.wait_for_timeout(300)
-            pg.screenshot(path=str(OUT / f"18-memory-{'volcano' if last == 90 else 'sky'}.png"))
+            pg.screenshot(path=str(OUT / f"18-memory-{bg}.png"))
             close_modal(pg, "ok")
-            if last == 90:
+            if last != 135:
                 pg.wait_for_selector(".rocket-box")
                 close_modal(pg, "ok")
         pg.wait_for_selector(".wnode")
@@ -473,7 +505,7 @@ def main():
         pg.evaluate("() => window.__T.renderDex()")
         cnt = pg.evaluate("() => window.__T.Store.data.dexOrder.length")
         check(pg.locator(".dcard").count() == cnt and cnt >= 10, f"도감: 구조한 친구 {cnt}마리 카드")
-        check(pg.locator(".mem-card").count() == 5, "도감: 기념 그림 5장 (동굴·설산·마을·화산·하늘성)")
+        check(pg.locator(".mem-card").count() == 7, "도감: 기념 그림 7장 (동굴·설산·마을·화산·하늘성·발전소·신전)")
         pg.screenshot(path=str(OUT / "13-dex.png"))
         pg.locator('.mem-card[data-m="4"]').click()
         check(pg.locator(".mem-box .mem-poke").count() >= 10, "도감에서 기념 그림 다시 보기")
@@ -483,7 +515,7 @@ def main():
         close_modal(pg, "ok")
         pg.evaluate("() => window.__T.renderCenter()")
         check(pg.locator(".roam").count() >= 10, "센터: 구조한 친구들이 돌아다님")
-        check(pg.locator(".deco").count() == 7, "센터: 장식 7개 (화분·분수·수정 등·눈사람·깃발·화로·망원경)")
+        check(pg.locator(".deco").count() == 9, "센터: 장식 9개 (… 화로·망원경·번개 등·트로피)")
         pg.screenshot(path=str(OUT / "14-center.png"))
 
         # ---- 5. 보호자
@@ -517,7 +549,7 @@ def main():
         pg.evaluate("() => { window.__T.Store.data.settings.openAll = true; window.__T.Store.save(); }")
         for (w, h, name) in [(1024, 768, "iPad 10.2 가로"), (1180, 820, "iPad 11 가로"), (1366, 1024, "iPad 12.9 가로"), (820, 1180, "iPad 세로"), (844, 390, "폰 가로")]:
             pg.set_viewport_size({"width": w, "height": h})
-            for no in (1, 24, 40, 54, 75, 105):
+            for no in (1, 24, 40, 54, 75, 105, 118, 135):
                 pg.evaluate(f"() => window.__T.startLevel({no})")
                 pg.wait_for_selector(".board .tile")
                 pg.wait_for_timeout(80)

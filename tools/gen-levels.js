@@ -150,8 +150,46 @@ const W7 = [
   { id: "L104", n: 7, par: 14, starts: 3, cp: 2, abil: { f: 1, v: 1 }, kr: 5, ks: 3, kb: 2, dr: 3, ds: 2, tee: 3, cross: 1, empty: 2, len: L7, gates: MIX },
   { id: "L105", n: 7, par: 14, starts: 3, cp: 2, abil: { w: 1, f: 1, v: 1 }, kr: 5, ks: 3, kb: 2, dr: 3, ds: 2, tee: 3, cross: 1, empty: 2, len: L7, gates: MIX },
 ];
+// 월드 8 번개 발전소 — ⚡ 전기 스위치 (사용자 확정 v2026-10-31a). sw = 노랑 ⚡(피카츄 스위치) 조각 수, sw2 = 파랑 ⚡(라이츄 스위치),
+//   swr = 노랑 중 손으로도 돌릴 수 있는 것, dz = 길 밖 노랑 ⚡ 곁가지. 조작 수는 8~11 로 되돌리고 스위치로 생각을 어렵게
+const W8 = [
+  { id: "L106", n: 6, par: 5, sw: 3, kr: 1, ks: 1, len: [7, 10], gates: WE },
+  { id: "L107", n: 6, par: 6, sw: 3, swr: 1, kr: 1, ks: 1, dr: 1, tee: 1, len: [7, 10], gates: MIX },
+  { id: "L108", n: 6, par: 6, sw: 4, dz: 1, kr: 2, ks: 1, tee: 1, starts: 2, len: [7, 10], gates: MIX },
+  { id: "L109", n: 6, par: 7, sw: 3, swr: 1, kr: 2, ks: 2, dr: 1, cp: 1, tee: 1, len: [8, 11], gates: MIX },
+  { id: "L110", n: 6, par: 8, sw: 4, kr: 2, ks: 1, kb: 1, abil: { w: 1 }, tee: 2, cross: 1, len: [8, 11], gates: MIX },
+  { id: "L111", n: 7, par: 8, sw: 3, sw2: 2, kr: 2, ks: 1, tee: 1, len: [9, 13], gates: MIX },
+  { id: "L112", n: 7, par: 8, sw: 3, sw2: 2, kr: 2, ks: 2, dr: 1, starts: 2, len: [9, 13], gates: MIX },
+  { id: "L113", n: 7, par: 9, sw: 4, swr: 1, kr: 2, ks: 2, cp: 1, abil: { f: 1 }, len: [9, 13], gates: MIX },
+  { id: "L114", n: 7, par: 9, sw: 3, sw2: 3, kr: 2, ks: 1, kb: 1, dr: 1, tee: 2, cross: 1, len: [9, 13], gates: MIX },
+  { id: "L115", n: 7, par: 10, sw: 4, sw2: 2, kr: 3, ks: 2, starts: 3, len: [9, 13], gates: MIX },
+  { id: "L116", n: 7, par: 10, sw: 3, swr: 1, sw2: 2, kr: 2, ks: 2, cp: 2, abil: { v: 1 }, len: [10, 14], gates: MIX },
+  { id: "L117", n: 7, par: 10, sw: 4, sw2: 3, kr: 3, ks: 2, kb: 1, tee: 2, starts: 2, len: [10, 14], gates: MIX },
+  { id: "L118", n: 7, par: 11, sw: 4, swr: 1, sw2: 2, kr: 3, ks: 2, abil: { w: 1, f: 1 }, tee: 2, cross: 1, len: [10, 14], gates: MIX },
+  { id: "L119", n: 7, par: 11, sw: 4, sw2: 3, kr: 3, ks: 2, starts: 2, cp: 1, len: [10, 14], gates: MIX },
+  { id: "L120", n: 7, par: 11, sw: 4, swr: 1, sw2: 3, kr: 3, ks: 2, kb: 1, starts: 3, abil: { v: 1 }, tee: 2, len: [10, 14], gates: MIX },
+];
+// 월드 9 무지개 신전 — 🌀 워프 패널 (사용자 확정 v2026-10-31a). warp = 패널 쌍 수(길이 그만큼 끊겨 순간이동), seg = 토막 길이
+const S6 = [3, 6], S7 = [4, 7];
+const W9 = [
+  { id: "L121", n: 6, par: 6, warp: 1, seg: S6, kr: 2, ks: 1, gates: WE },
+  { id: "L122", n: 6, par: 6, warp: 1, seg: S6, kr: 2, ks: 1, dr: 1, tee: 1, gates: MIX },
+  { id: "L123", n: 6, par: 7, warp: 1, seg: S6, kr: 2, ks: 2, starts: 2, gates: MIX },
+  { id: "L124", n: 6, par: 8, warp: 1, seg: S6, kr: 2, ks: 1, kb: 1, cp: 1, tee: 1, gates: MIX },
+  { id: "L125", n: 6, par: 7, warp: 2, seg: [3, 5], kr: 3, ks: 1, gates: MIX },
+  { id: "L126", n: 7, par: 9, warp: 1, seg: S7, sw: 3, kr: 2, ks: 2, tee: 1, gates: MIX },
+  { id: "L127", n: 7, par: 9, warp: 2, seg: [3, 6], kr: 3, ks: 2, abil: { w: 1 }, tee: 2, gates: MIX },
+  { id: "L128", n: 7, par: 10, warp: 1, seg: S7, kr: 3, ks: 2, starts: 2, cp: 1, cross: 1, gates: MIX },
+  { id: "L129", n: 7, par: 10, warp: 2, seg: [3, 6], sw: 3, kr: 2, ks: 2, starts: 2, gates: MIX },
+  { id: "L130", n: 7, par: 10, warp: 1, seg: S7, sw: 3, sw2: 2, kr: 2, ks: 2, abil: { f: 1 }, tee: 2, gates: MIX },
+  { id: "L131", n: 7, par: 11, warp: 2, seg: [3, 6], kr: 3, ks: 2, kb: 1, starts: 3, tee: 2, gates: MIX },
+  { id: "L132", n: 7, par: 11, warp: 1, seg: S7, sw: 4, kr: 3, ks: 2, cp: 2, abil: { v: 1 }, gates: MIX },
+  { id: "L133", n: 7, par: 11, warp: 2, seg: [3, 6], sw: 3, kr: 3, ks: 2, starts: 2, abil: { w: 1, f: 1 }, tee: 2, cross: 1, gates: MIX },
+  { id: "L134", n: 7, par: 12, warp: 2, seg: [3, 6], sw: 3, sw2: 2, kr: 3, ks: 2, starts: 3, cp: 1, gates: MIX },
+  { id: "L135", n: 7, par: 12, warp: 2, seg: [3, 6], sw: 4, kr: 3, ks: 2, kb: 1, starts: 2, cp: 1, abil: { w: 1, v: 1 }, tee: 2, cross: 1, gates: MIX },
+];
 const INTRO = { L01: "r", L02: "r", L03: "r", L16: "s", L17: "s", L18: "s", L31: "rs", L32: "rs", L33: "rs",
-  L46: "w", L49: "f", L52: "v", L61: "k", L64: "m", L79: "m3", L80: "k2" };
+  L46: "w", L49: "f", L52: "v", L61: "k", L64: "m", L79: "m3", L80: "k2", L106: "z", L111: "z2", L121: "p", L125: "p2" };
 
 // ---------- 난수 ----------
 function mulberry(a) {
@@ -339,10 +377,10 @@ function needsBoth(lv) {
 
 // ---------- 월드 4·5: 능력 · 열매 · 두 친구 ----------
 /** 둘째 길: 출발 칸에서 첫째 길 어딘가에 합류할 때까지 */
-function joinPath(R, n, s, onA, len) {
+function joinPath(R, n, s, onA, len, avoid) {
   let budget = 20000, found = null;
   const want = ri(R, len[0], len[1]);
-  const seen = new Set([s]), walk = [s];
+  const seen = new Set([s].concat(avoid ? [...avoid] : [])), walk = [s];
   function dfs(i) {
     if (found || --budget < 0) return;
     for (const d of shuffle(R, [0, 1, 2, 3])) {
@@ -359,14 +397,37 @@ function joinPath(R, n, s, onA, len) {
   dfs(s);
   return found;
 }
+/** s → t 길인데 avoid 칸은 밟지 않음 (워프 토막) */
+function randomPathAvoid(R, n, s, t, len, avoid) {
+  let budget = 30000, found = null;
+  const want = ri(R, len[0], len[1]);
+  const seen = new Set([s].concat([...avoid].filter((i) => i !== t)));
+  const walk = [s];
+  function dfs(i) {
+    if (found || --budget < 0) return;
+    if (i === t) { if (walk.length >= len[0] && walk.length <= len[1] && Math.abs(walk.length - want) <= 1) found = walk.slice(); return; }
+    if (walk.length >= len[1]) return;
+    for (const d of shuffle(R, [0, 1, 2, 3])) {
+      const j = E.neighbor(n, i, d);
+      if (j < 0 || seen.has(j)) continue;
+      seen.add(j); walk.push(j);
+      dfs(j);
+      walk.pop(); seen.delete(j);
+      if (found) return;
+    }
+  }
+  dfs(s);
+  return found;
+}
 /** 칸에 필요한 포트 모음 → 모양·방향 */
 function shapeOfPorts(set) {
   const p = [...set].sort();
+  if (p.length === 1) return { sh: "P", r: p[0] }; // 워프 패널 입구
   if (p.length === 4) return { sh: "X", r: 0 };
   if (p.length === 3) return { sh: "T", r: [0, 1, 2, 3].find((d) => !set.has(d)) };
   return shapeFor(p[0], p[1]);
 }
-const OBS_ADV = { 4: ["t", "r", "r"], 5: ["t", "t", "r"], 6: ["l", "v", "v"], 7: ["c", "c", "s"] }; // 6: 용암·화산 바위 · 7: 구름·별 수정
+const OBS_ADV = { 4: ["t", "r", "r"], 5: ["t", "t", "r"], 6: ["l", "v", "v"], 7: ["c", "c", "s"], 8: ["g", "g", "d"], 9: ["p", "p", "q"] }; // 8: 발전기·줄무늬 통 · 9: 기둥·무지개 수정 // 6: 용암·화산 바위 · 7: 구름·별 수정
 /**
  * 풀린 판을 먼저 만들고 거꾸로 섞는다:
  *   물 다리 → 물(꼬부기) · 덩굴 다리 → 낭떠러지(이상해씨) · 빈칸 → 덤불(파이리) · 돌리기·밀기 섞기
@@ -381,14 +442,45 @@ function genAdvanced(cfg, R, world) {
   const g = E.gateCell(n, goal);
   const sc = starts.map((st) => E.gateCell(n, st));
   if (new Set(sc.concat([g])).size !== sc.length + 1) return null;
-  const A = randomPath(R, n, sc[0], g, cfg.len);
-  if (!A) return null;
+  let A;
+  const paths = [];
+  const portal = new Map(); // 칸 → 짝 글자
+  if (cfg.warp) {
+    // 출발 → 패널 X1 ~순간이동~ 패널 Y1 → (X2 ~ Y2 →) 센터. 토막끼리는 겹치지 않는다
+    const used = new Set([g].concat(sc));
+    let from = sc[0];
+    A = [];
+    for (let q = 0; q <= cfg.warp; q++) {
+      let to = g;
+      if (q < cfg.warp) {
+        const free = [...Array(n * n).keys()].filter((i) => !used.has(i));
+        to = pick(R, free);
+      }
+      used.delete(to);
+      const seg = randomPathAvoid(R, n, from, to, cfg.seg || [3, 6], used);
+      if (!seg) return null;
+      seg.forEach((i) => used.add(i));
+      paths.push(seg);
+      A = A.concat(seg);
+      if (q < cfg.warp) {
+        const free = [...Array(n * n).keys()].filter((i) => !used.has(i));
+        if (!free.length) return null;
+        const y = pick(R, free);
+        used.add(y);
+        portal.set(to, "AB"[q]); portal.set(y, "AB"[q]);
+        from = y;
+      }
+    }
+  } else {
+    A = randomPath(R, n, sc[0], g, cfg.len);
+    if (!A) return null;
+    paths.push(A);
+  }
   const onA = new Set(A);
-  const paths = [A];
   for (let k = 1; k < starts.length; k++) {
-    const on = new Set(paths.flat());
-    if (on.has(sc[k])) return null;
-    const B = joinPath(R, n, sc[k], on, cfg.lenB || [2, 5]);
+    const on = new Set(paths.flat().filter((i) => !portal.has(i)));
+    if (on.has(sc[k]) || portal.has(sc[k])) return null;
+    const B = joinPath(R, n, sc[k], on, cfg.lenB || [2, 5], portal.size ? new Set(portal.keys()) : undefined);
     if (!B) return null;
     paths.push(B);
   }
@@ -405,30 +497,37 @@ function genAdvanced(cfg, R, world) {
   for (const i of pathCells) {
     if (!tees) break;
     const t = shape.get(i);
-    if (t.sh === "T" || t.sh === "X") continue;
+    if (t.sh === "T" || t.sh === "X" || t.sh === "P") continue;
     shape.set(i, toTee(R, Object.assign({ i }, t))); tees--;
   }
   const tile = (i, f) => tok(shape.get(i).sh, shape.get(i).r, f);
   const cells = new Array(n * n).fill(null);
   const role = new Map(); // i → cp · rot · sl · fix · water · pit
   for (let q = 0; q < (cfg.cp || 0); q++) {
-    const mid = A.slice(2, -2).filter((i) => !sc.includes(i) && !role.has(i));
+    const mid = A.slice(2, -2).filter((i) => !sc.includes(i) && !role.has(i) && !portal.has(i));
     if (!mid.length) return null;
     role.set(pick(R, mid), "cp");
   }
   const free = pathCells.filter((i) => !role.has(i));
   const kb = cfg.kb || 0;
-  free.forEach((i, k) => role.set(i, k < cfg.kr ? "rot" : k < cfg.kr + cfg.ks ? "sl" : k < cfg.kr + cfg.ks + kb ? "both" : "fix"));
+  const sw = cfg.sw || 0, sw2 = cfg.sw2 || 0, swr = cfg.swr || 0;
+  const base = cfg.kr + cfg.ks + kb;
+  free.forEach((i, k) => role.set(i, k < cfg.kr ? "rot" : k < cfg.kr + cfg.ks ? "sl" : k < base ? "both"
+    : k < base + swr ? "swzr" : k < base + sw ? "swz" : k < base + sw + sw2 ? "swy" : "fix"));
   for (const [i, ro] of role) {
     const t = shape.get(i);
     if (ro === "cp") cells[i] = tile(i, "k");
     else if (ro === "rot") cells[i] = tok(t.sh, E.PERIOD[t.sh] > 1 ? (t.r + ri(R, 1, E.PERIOD[t.sh] - 1)) % 4 : t.r, "r");
     else if (ro === "sl") cells[i] = tile(i, "s");
     else if (ro === "both") cells[i] = tok(t.sh, E.PERIOD[t.sh] > 1 ? (t.r + ri(R, 1, E.PERIOD[t.sh] - 1)) % 4 : t.r, "rs");
+    else if (ro === "swzr") cells[i] = tok(t.sh, E.PERIOD[t.sh] > 1 ? (t.r + ri(R, 1, E.PERIOD[t.sh] - 1)) % 4 : t.r, "rz");
+    else if (ro === "swz") cells[i] = tile(i, "z");
+    else if (ro === "swy") cells[i] = tile(i, "y");
     else cells[i] = tile(i, "");
+    if (portal.has(i)) cells[i] += portal.get(i);
   }
   const abil = { w: 0, f: 0, v: 0 };
-  const fixedOnA = () => A.filter((i) => role.get(i) === "fix" && !sc.includes(i) && i !== g);
+  const fixedOnA = () => A.filter((i) => role.get(i) === "fix" && !sc.includes(i) && i !== g && !portal.has(i));
   // 꼬부기: 고정 길 한 칸 → 물
   for (let k = 0; k < ((cfg.abil && cfg.abil.w) || 0); k++) {
     const c = fixedOnA();
@@ -440,7 +539,7 @@ function genAdvanced(cfg, R, world) {
   for (let k = 0; k < ((cfg.abil && cfg.abil.v) || 0); k++) {
     const fx = new Set(fixedOnA());
     const pairs = [];
-    for (let q = 0; q + 1 < A.length; q++) if (fx.has(A[q]) && fx.has(A[q + 1])) pairs.push([A[q], A[q + 1]]);
+    for (let q = 0; q + 1 < A.length; q++) if (fx.has(A[q]) && fx.has(A[q + 1]) && dirTo(n, A[q], A[q + 1]) >= 0) pairs.push([A[q], A[q + 1]]);
     if (!pairs.length) return null;
     const gch = "abc"[k];
     for (const i of pick(R, pairs)) { const t = shape.get(i); cells[i] = "^" + t.sh + t.r + gch; role.set(i, "pit"); }
@@ -449,16 +548,26 @@ function genAdvanced(cfg, R, world) {
   // 길 밖: 빈칸 · 곁가지 · 장애물
   const rest = shuffle(R, [...Array(n * n).keys()].filter((i) => !P.has(i)));
   const empty = cfg.empty || 1, ds = cfg.ds || 0, dr = cfg.dr || 0;
-  if (rest.length < empty + ds + dr) return null;
+  if (rest.length < empty + ds + dr + (cfg.dz || 0)) return null;
   const obs = OBS_ADV[world];
   const decoy = cfg.cross ? ["S", "C", "T", "X"] : ["S", "C", "T"];
   rest.forEach((i, k) => {
     if (k < empty) cells[i] = ".";
     else if (k < empty + ds) cells[i] = tok(pick(R, decoy), ri(R, 0, 3), "s");
     else if (k < empty + ds + dr) cells[i] = tok(pick(R, decoy), ri(R, 0, 3), "r");
+    else if (k < empty + ds + dr + (cfg.dz || 0)) cells[i] = tok(pick(R, decoy), ri(R, 0, 3), "z");
     else cells[i] = "#" + pick(R, obs);
   });
-  const lv = { n, ops: "rsa", goal, cells, abil };
+  // ⚡ 스위치 거꾸로 섞기: 무리마다 1~3번 덜 돌려 둔다 (풀려면 스위치를 그만큼 눌러야)
+  for (const [grp, cnt] of [["z", sw + (cfg.dz || 0)], ["y", sw2]]) {
+    if (!cnt) continue;
+    const back = ri(R, 1, 3);
+    cells.forEach((c, i) => {
+      if (!c || !/^[SCTXP][0-3][a-z]*$/.test(c.replace(/[A-C]$/, "")) || !c.slice(2).includes(grp)) return;
+      cells[i] = c[0] + ((+c[1] + 4 - back) % 4) + c.slice(2);
+    });
+  }
+  const lv = { n, ops: sw ? "rsaz" : "rsa", goal, cells, abil };
   if (starts.length > 1) lv.starts = starts; else lv.start = starts[0];
   // 빈칸을 돌아다니게 해서 섞기 (방금 민 타일은 다시 안 민다)
   let st = E.makeState(lv), last = -1;
@@ -513,12 +622,14 @@ function build(cfg, world) {
     return Object.assign(o, { kept: true });
   }
   const t0 = Date.now();
+  const WHY = {}; const why = (k) => { WHY[k] = (WHY[k] || 0) + 1; }; // DBG=1 이면 못 찾았을 때 버린 이유를 센다
   for (let tries = 0; tries < 20000; tries++) {
     const R = mulberry(hashId(cfg.id) * 7919 + tries);
     const lv = world === 1 ? genRotate(cfg, R) : world === 2 ? genSlide(cfg, R) : world === 3 ? genMixed(cfg, R) : genAdvanced(cfg, R, world);
-    if (!lv) continue;
+    if (!lv) { why('판 못 만듦'); continue; }
     const { err, sol } = finish(cfg.id, lv, cfg.par);
-    if (err || sol.moves !== cfg.par) continue;
+    if (err) { why(err[0]); continue; }
+    if (sol.moves !== cfg.par) { why('par ' + sol.moves); continue; }
     if (world === 3) {
       // 회전만 잔뜩 + 밀기 한 번이 되지 않게: par 5 이상은 밀기 2번 이상, 회전도 2번 이상
       const ns = sol.actions.filter((a) => a.t === "s").length, nr = sol.moves - ns;
@@ -527,13 +638,23 @@ function build(cfg, world) {
     }
     if (world >= 4) {
       lv.par = sol.moves;
-      if (cfg.kr && !sol.actions.some((a) => a.t === "r")) continue; // 돌리기가 하나도 없는 풀이는 버림
-      if (cfg.ks && !sol.actions.some((a) => a.t === "s")) continue; // 미는 조각이 있으면 밀기도 꼭 쓰게
-      if (!needsAllAbilities(lv)) continue;
+      if (cfg.kr && !sol.actions.some((a) => a.t === "r")) { why('돌리기가 하나도 없는 풀이는 버림'); continue; } // 돌리기가 하나도 없는 풀이는 버림
+      if (cfg.ks && !sol.actions.some((a) => a.t === "s")) { why('미는 조각이 있으면 밀기도 꼭 쓰게'); continue; } // 미는 조각이 있으면 밀기도 꼭 쓰게
+      if (!needsAllAbilities(lv)) { why('능력 덜 줘도 풀림'); continue; }
+      if (cfg.sw) {
+        if (!sol.actions.some((a) => a.t === "z")) continue;
+        const noZ = Object.assign({}, lv, { ops: "rsa" });
+        if (E.solve(E.makeState(noZ), noZ, { maxDepth: lv.par + 6, maxStates: 300000 })) { why('스위치 없이도 풀림'); continue; } // 스위치 없이도 풀림
+      }
+      if (cfg.warp) {
+        const noW = Object.assign({}, lv, { noWarp: true });
+        if (E.solve(E.makeState(noW), noW, { maxDepth: lv.par + 6, maxStates: 300000 })) { why('워프 없이도 풀림'); continue; } // 워프 없이도 풀림
+      }
     }
     // 정답 길에서 돌리거나 미는 칸이 실제로 쓰이는지 (곁가지만 만지는 풀이는 버림)
     return Object.assign(lv, { par: sol.moves, sol: sol.actions, tries, t: ((Date.now() - t0) / 1000).toFixed(1) });
   }
+  if (process.env.DBG) console.log(WHY);
   throw new Error(cfg.id + ": 조건에 맞는 판을 못 찾음");
 }
 
@@ -562,9 +683,11 @@ function main() {
   for (const c of W3) add(c.id, 3, build(c, 3));
   const only = process.argv[2]; // node tools/gen-levels.js L61  → 그 레벨만 시험 삼아 만들어 본다 (파일은 안 씀)
   if (only) {
-    const c = W4.concat(W5, W6, W7).find((x) => x.id === only);
+    const WS = { 4: W4, 5: W5, 6: W6, 7: W7, 8: W8, 9: W9 };
+    const wn = +Object.keys(WS).find((k) => WS[k].some((x) => x.id === only));
+    const c = WS[wn].find((x) => x.id === only);
     const t1 = Date.now();
-    const lv = build(c, W4.includes(c) ? 4 : W5.includes(c) ? 5 : W6.includes(c) ? 6 : 7);
+    const lv = build(c, wn);
     console.log(only, "시도", lv.tries + 1, ((Date.now() - t1) / 1000).toFixed(1) + "초", JSON.stringify(lv.sol));
     return;
   }
@@ -572,6 +695,8 @@ function main() {
   for (const c of W5) add(c.id, 5, build(c, 5));
   for (const c of W6) add(c.id, 6, build(c, 6));
   for (const c of W7) add(c.id, 7, build(c, 7));
+  for (const c of W8) add(c.id, 8, build(c, 8));
+  for (const c of W9) add(c.id, 9, build(c, 9));
   for (const lv of all) { delete lv.tries; delete lv.hand; delete lv.t; delete lv.kept; } // t = 만드는 데 걸린 초 (기록에만)
   all.sort((a, b) => a.no - b.no);
   const out = path.join(__dirname, "..", "data", "levels.js");

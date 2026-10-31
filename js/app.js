@@ -138,7 +138,8 @@ const Poke = {
   img: (n) => `assets/sprites/${n}.png`,
   _pool: {},
   pool(w) {
-    if (!this._pool[w.no]) this._pool[w.no] = PK.types.map((t, i) => [i + 1, t.split("·")]).filter(([, ts]) => ts.some((x) => w.types.includes(x))).map(([n]) => n);
+    if (!this._pool[w.no]) this._pool[w.no] = PK.types.map((t, i) => [i + 1, t.split("·")])
+      .filter(([n, ts]) => ts.some((x) => w.types.includes(x)) || (w.rare && "ul".includes(this.rar(n)))).map(([n]) => n);
     return this._pool[w.no];
   },
   /** 월드 풀에서 희귀도 비율대로 한 마리. last = 월드 마지막 레벨이면 유니크·전설 확정 */
@@ -150,7 +151,7 @@ const Poke = {
     else {
       let x = Math.random() * 100;
       rar = "c";
-      for (const [r, p] of Object.entries(window.RARITY_ODDS)) { if (x < p) { rar = r; break; } x -= p; }
+      for (const [r, p] of Object.entries(w.odds || window.RARITY_ODDS)) { if (x < p) { rar = r; break; } x -= p; }
     }
     const list = by(rar).length ? by(rar) : pool;
     return list[Math.floor(Math.random() * list.length)];
@@ -258,8 +259,8 @@ function renderTitle() {
 // =====================================================================
 // 지도 · 레벨 고르기
 // =====================================================================
-// 지도 그림(worldmap7.webp) 위 월드 자리 (%) — 숲·강·동굴·설산·마을·화산·하늘성
-const MAP_POS = [[14, 68], [38, 76], [40, 46], [24, 18], [57, 18], [75, 52], [88, 20]];
+// 지도 그림(worldmap9.webp) 위 월드 자리 (%) — 숲·강·동굴·설산·마을·화산·하늘성·발전소·신전
+const MAP_POS = [[12, 68], [35, 78], [26, 50], [17, 17], [44, 18], [55, 49], [71, 17], [85, 69], [90, 26]];
 function renderMap() {
   const W = window.WORLDS;
   show(`
@@ -339,7 +340,9 @@ const ABIL_INFO = {
   f: { poke: 4, name: "파이리", what: "덤불 태우기", fx: "🔥" },
   v: { poke: 1, name: "이상해씨", what: "덩굴 다리", fx: "🌿" },
 };
-const INTRO_SAY = { r: "introR", s: "introS", rs: "introRS", w: "introW", f: "introF", v: "introV", k: "introK", m: "introM", m3: "introM3", k2: "introK2" };
+// ⚡ 스위치 (월드 8~): 노랑 무리 = 피카츄, 파랑 무리 = 라이츄
+const SW_INFO = { z: { poke: 25, name: "피카츄" }, y: { poke: 26, name: "라이츄" } };
+const INTRO_SAY = { r: "introR", s: "introS", rs: "introRS", w: "introW", f: "introF", v: "introV", k: "introK", m: "introM", m3: "introM3", k2: "introK2", z: "introZ", z2: "introZ2", p: "introP", p2: "introP2" };
 function startLevel(no) {
   const lv = LV[no], w = worldOf(no);
   Store.data.last = no; Store.save();
@@ -387,6 +390,12 @@ function introGuide() {
   } else if (lv.intro === "k" || lv.intro === "k2") {
     $$(".tile .berry").forEach((b) => b.classList.add("pulse"));
     showFinger(lv.sol[0]);
+  } else if (lv.intro === "z" || lv.intro === "z2") {
+    $$(".abil.sw").forEach((b) => b.classList.add("pulse")); // 스위치 소개: 스위치 버튼이 반짝
+    $$(".tile .badge.zap").forEach((b) => b.classList.add("pulse"));
+  } else if (lv.intro === "p" || lv.intro === "p2") {
+    $$(".tile .portal").forEach((b) => b.classList.add("pulse")); // 워프 소개: 패널이 반짝
+    showFinger(lv.sol[0]);
   } else showFinger(lv.sol[0]);
 }
 
@@ -395,6 +404,8 @@ function renderGame() {
   const s = lvState(lv.no);
   const ab = G.state.ab;
   const abKeys = E.ABIL.filter((k) => lv.abil && lv.abil[k]);
+  const swKeys = ["z", "y"].filter((g) => G.init.cells.some((c) => c && c.sw === g));
+  const nBtn = abKeys.length + swKeys.length;
   show(`
   <div class="game" style="--bg:url(../assets/board/region-${w.bg}.webp)">
     <div class="board-wrap" id="boardWrap"><div class="board" id="board"></div></div>
@@ -403,7 +414,8 @@ function renderGame() {
       <div class="win-box who ${G.pokes.length > 1 ? "two" : ""} ${G.pokes.length > 2 ? "three" : ""}">
         ${G.pokes.map((p, k) => `<div class="who-one" data-g="${k}"><img src="${Poke.img(p)}" alt=""><div><b>${esc(Poke.name(p))}</b>${rarBadge(p)}<small>${G.pokes.length > 1 ? "" : "길을 잃었어요"}</small></div></div>`).join("")}
       </div>
-      ${abKeys.length ? `<div class="abils n${abKeys.length}">${abKeys.map((k) => `<button class="btn abil" data-k="${k}" aria-label="${ABIL_INFO[k].name} ${ABIL_INFO[k].what}">
+      ${nBtn ? `<div class="abils n${nBtn}">${swKeys.map((g) => `<button class="btn abil sw sw-${g}" data-z="${g}" aria-label="${SW_INFO[g].name} 스위치">
+        <img src="${Poke.img(SW_INFO[g].poke)}" alt=""><span class="zap-ico">⚡</span></button>`).join("")}${abKeys.map((k) => `<button class="btn abil" data-k="${k}" aria-label="${ABIL_INFO[k].name} ${ABIL_INFO[k].what}">
         <img src="${Poke.img(ABIL_INFO[k].poke)}" alt=""><span>${ABIL_INFO[k].what}</span><i class="cnt">${ab[k]}</i></button>`).join("")}</div>` : ""}
       <div class="win-box moves"><span>움직인 횟수</span><b id="mv">0</b><small>⭐⭐⭐ = ${lv.par}번 안에${s.best ? ` · 최고 ${s.best}번` : ""}</small></div>
       <button id="goBtn" class="btn huge go" data-a="go">출발!</button>
@@ -423,6 +435,8 @@ function renderGame() {
   buildBoard();
   window.onresize = () => { if (!G.busy) buildBoard(); };
   $("#app").onclick = (e) => {
+    const swb = e.target.closest(".abil.sw");
+    if (swb) { if (!G.busy) pressSwitch(swb.dataset.z); return; }
     const ab = e.target.closest(".abil");
     if (ab && !G.busy) return pickAbility(ab.dataset.k);
     const b = e.target.closest("[data-a]");
@@ -452,7 +466,7 @@ function roadSVG(dirs, cls, rot) {
   const d = dirs.map((k) => ROAD[DIRK[k]]).join("");
   return `<svg class="road ${cls || ""}" viewBox="0 0 100 100" preserveAspectRatio="none"${rot ? ` style="transform:rotate(${rot}deg)"` : ""}><path class="rd-o" d="${d}"/><path class="rd-i" d="${d}"/><path class="rd-g" d="${d}"/></svg>`;
 }
-const OB_IMG = { t: "ob-tree", r: "ob-rock", b: "ob-bush", l: "ob-lava", v: "ob-basalt", c: "ob-cloud", s: "ob-star" }; // l·v 화산, c·s 하늘성
+const OB_IMG = { t: "ob-tree", r: "ob-rock", b: "ob-bush", l: "ob-lava", v: "ob-basalt", c: "ob-cloud", s: "ob-star", g: "ob-gen", d: "ob-drum", p: "ob-pillar", q: "ob-rainbow" }; // l·v 화산, c·s 하늘성, g·d 발전소, p·q 신전
 function gatePos(n, g) {
   const s = E.SIDE[g.side];
   if (s === 3) return [0, g.at + 1];
@@ -465,7 +479,7 @@ function tileSig(t) {
   if (t.ob) return "o" + t.ob;
   if (t.wa) return "w";
   if (t.pit) return "p";
-  return ["P", t.sh, t.rot, t.sl, t.br, t.cp, t.wb, t.vb].join("");
+  return ["P", t.sh, t.rot, t.sl, t.br, t.cp, t.wb, t.vb, t.sw, t.pair].join("");
 }
 function tileHTML(t) {
   if (t.ob) return { cls: "tile ob", html: `<img src="assets/board/${OB_IMG[t.ob]}.png" alt="">` };
@@ -476,8 +490,8 @@ function tileHTML(t) {
   const base = t.wb ? "bridge" : t.vb ? "vine" : t.br ? "bridge" : t.rot || t.sl ? "wood" : "stone";
   const turn = (t.br || t.wb || t.vb) && t.sh === "S" && t.r % 2 ? ` style="transform:rotate(90deg)"` : ""; // 판자·덩굴을 길 방향으로
   return {
-    cls: `tile path ${base} ${t.rot ? "can-rot" : ""}`,
-    html: `<div class="blk"${turn}></div>${roadSVG(E.SHAPES[t.sh])}${t.cp ? `<img class="berry" src="assets/items/oran-berry.png" alt="">` : ""}${t.rot ? `<span class="badge rot">↻</span>` : ""}${t.sl && G.lv.ops !== "s" ? `<span class="badge sl">✋</span>` : ""}<span class="badge arrow"></span>`,
+    cls: `tile path ${base} ${t.rot ? "can-rot" : ""} ${t.sw ? "zap-" + t.sw : ""}`,
+    html: `<div class="blk"${turn}></div>${t.pair ? `<img class="portal portal-${t.pair}" src="assets/board/portal-tile.png" alt="">` : ""}${roadSVG(E.SHAPES[t.sh])}${t.sw ? `<span class="badge zap ${t.sw}">⚡</span>` : ""}${t.cp ? `<img class="berry" src="assets/items/oran-berry.png" alt="">` : ""}${t.rot ? `<span class="badge rot">↻</span>` : ""}${t.sl && G.lv.ops !== "s" ? `<span class="badge sl">✋</span>` : ""}<span class="badge arrow"></span>`,
   };
 }
 function buildBoard() {
@@ -598,7 +612,7 @@ function sync(fresh) {
   $("#undoBtn").disabled = !G.hist.length;
   $("#redoBtn").disabled = !G.redo.length;
   $("#resetBtn").disabled = G.moves === 0 && !G.hist.length;
-  $$(".abil").forEach((b) => {
+  $$(".abil[data-k]").forEach((b) => {
     const k = b.dataset.k;
     $(".cnt", b).textContent = state.ab[k];
     b.classList.toggle("on", G.aim === k);
@@ -672,8 +686,15 @@ function tap(i, el) {
   // 능력을 쓸 수 있는 칸을 그냥 누르면: 그 능력 버튼을 알려 준다
   const k = E.ABIL.find((x) => G.state.ab[x] > 0 && ((x === "w" && t.wa) || (x === "f" && t.ob === "b") || (x === "v" && t.pit)));
   if (k) { const b = $(`.abil[data-k="${k}"]`); b.classList.remove("hint1"); void b.offsetWidth; b.classList.add("hint1"); return say(ABIL_INFO[k].name, L.abilFirst); }
+  if (t.sw) { const b = $(`.abil.sw[data-z="${t.sw}"]`); b.classList.remove("hint1"); void b.offsetWidth; b.classList.add("hint1"); return say(L.switchFirst); }
   if (ops === "r") say(t.sh ? L.cantRotate : L.cantMove);
   else say(t.sh && t.sl ? L.notNext : L.cantMove);
+}
+/** ⚡ 스위치: 그 무리 조각이 모두 한꺼번에 90° */
+function pressSwitch(g) {
+  if (G.aim) { G.aim = null; sync(true); }
+  $$(".abil.sw.pulse, .tile .badge.zap.pulse").forEach((b) => b.classList.remove("pulse"));
+  act({ t: "z", g });
 }
 function pickAbility(k) {
   if (!G.state.ab[k]) { SFX.no(); return say(L.abilEmpty); }
@@ -692,7 +713,16 @@ function act(a) {
   afterChange();
   if (a.t === "r") SFX.turn();
   else if (a.t === "s") SFX.slide();
+  else if (a.t === "z") switchFx(a.g);
   else abilityFx(a);
+}
+function switchFx(g) {
+  SFX.tone([[1400, 0.03, 0.05], [700, 0.03, 0.05], [1600, 0.06, 0.05]], "sawtooth");
+  $(".marks").insertAdjacentHTML("beforeend", G.state.cells.map((t, j) => {
+    if (!t || t.sw !== g) return "";
+    const [cx, cy] = cellXY(j);
+    return `<span class="fx fx-z" style="left:${cpx(cx)}px;top:${cpx(cy)}px">⚡</span>`;
+  }).join(""));
 }
 function abilityFx(a) {
   SFX.link();
@@ -740,6 +770,7 @@ function manipulable() {
     if (G.lv.ops.includes("r") && t.sh && t.rot) ids.add(t.id);
     if (G.lv.ops.includes("s") && E.slideTarget(G.state, i) >= 0) ids.add(t.id);
     if (E.ABIL.some((k) => E.canUse(G.state, k, i))) ids.add(t.id);
+    if (t.sw) ids.add(t.id);
   });
   return ids;
 }
@@ -764,10 +795,18 @@ function storedSolution() {
 function solutionIds(sol) {
   const ids = new Set();
   let st = G.state;
-  for (const a of sol.actions) { ids.add(st.cells[a.i].id); st = E.apply(st, a); }
+  for (const a of sol.actions) {
+    if (a.t === "z") st.cells.forEach((c) => { if (c && c.sw === a.g) ids.add(c.id); });
+    else ids.add(st.cells[a.i].id);
+    st = E.apply(st, a);
+  }
   return ids;
 }
 function flashAbil(sol) {
+  for (const g of new Set(sol.actions.filter((a) => a.t === "z").map((a) => a.g))) {
+    const b = $(`.abil.sw[data-z="${g}"]`);
+    if (b) { b.classList.remove("hint1"); void b.offsetWidth; b.classList.add("hint1"); }
+  }
   for (const k of new Set(sol.actions.filter((a) => a.t === "a").map((a) => a.k))) {
     const b = $(`.abil[data-k="${k}"]`);
     if (b) { b.classList.remove("hint1"); void b.offsetWidth; b.classList.add("hint1"); }
@@ -792,6 +831,7 @@ function hint() {
   if (G.hint === 2) { say(L.hint2); return; }
   const a = sol.actions[0];
   if (a.t === "a") { flashAbil({ actions: [a] }); showFinger({ t: "r", i: a.i }); say(ABIL_INFO[a.k].name, L.abilFirst); return; }
+  if (a.t === "z") { flashAbil({ actions: [a] }); say(L.switchHint); return; }
   showFinger(a);
   say(L.hint3);
 }
@@ -839,6 +879,19 @@ async function walk(k, conn, ok) {
     const [ax, ay] = pts[q - 1], [bx, by] = pts[q];
     const d = by < ay ? 0 : bx > ax ? 1 : by > ay ? 2 : 3;
     // 방향 영어(Up!·Right!)는 걸음이 빨라 다 끊겨서 뺐다 (v2026-10-19b 사용자 요청) — 걷는 동안 말은 넣지 않는다
+    if (Math.abs(bx - ax) + Math.abs(by - ay) > 1) {
+      // 워프 패널: 빙글 사라졌다가 짝 패널에서 나타남
+      wk.classList.add("warp");
+      SFX.tone([[900, 0.05, 0.05], [1300, 0.05, 0.05], [1800, 0.08, 0.05]], "triangle");
+      await sleep(TEST ? 20 : 300);
+      wk.style.transition = "none";
+      place(pts[q], null);
+      void wk.offsetWidth;
+      wk.style.transition = "";
+      wk.classList.remove("warp");
+      await sleep(TEST ? 20 : 300);
+      continue;
+    }
     place(pts[q], d === 1 ? true : d === 3 ? false : null);
     SFX.step();
     const i = conn.path[q - 1];
@@ -1022,7 +1075,7 @@ function waitIdle() { return new Promise((r) => { const t = setInterval(() => { 
 // 기념 그림 (월드 3~ 을 끝내면 — 구조한 친구들이 행복해하는 모습)
 // 포켓몬은 공식 도트, 배경만 Codex 그림 (포켓몬 캐릭터는 Codex 가 그리지 않는다)
 // =====================================================================
-const MEMORY_BG = { 3: "party-cave", 4: "party-snow", 5: "party-town", 6: "party-volcano", 7: "party-sky" };
+const MEMORY_BG = { 3: "party-cave", 4: "party-snow", 5: "party-town", 6: "party-volcano", 7: "party-sky", 8: "party-power", 9: "party-temple" };
 function makeMemory(w) {
   const dex = Store.data.dex;
   const mine = Store.data.dexOrder.filter((n) => dex[n] && dex[n].w === w.no);
@@ -1105,7 +1158,7 @@ function renderDex() {
 // 포켓몬센터
 // =====================================================================
 // 장식 자리 (%, 그림 아래쪽 가운데 기준) — 바닥 깔개 양쪽 끝
-const DECO_POS = { pot: [7, 99], fountain: [92, 99], crystal: [20, 99], snowman: [80, 99], bunting: [50, 70], bench: [66, 99], brazier: [33, 99], telescope: [68, 99] };
+const DECO_POS = { pot: [7, 99], fountain: [92, 99], crystal: [20, 99], snowman: [80, 99], bunting: [50, 70], bench: [66, 99], brazier: [33, 99], telescope: [68, 99], tesla: [14, 99], trophy: [50, 99] };
 function renderCenter() {
   const list = Store.data.dexOrder.slice(-14);
   show(`
@@ -1235,6 +1288,6 @@ window.addEventListener("online", () => checkUpdate(true));
 setInterval(() => checkUpdate(), 10 * 60000);
 
 // ---------- 시험용 손잡이 (?test) ----------
-if (TEST) window.__T = { G, Store, Update, E, LV, Poke, startLevel, renderTitle, renderMap, renderLevels, renderDex, renderCenter, renderParent, act, go, tap, hint, undo, redo, reset, skipLevel, unlocked, pickAbility, readyGates, showMemory, makeMemory, storedSolution, solution };
+if (TEST) window.__T = { G, Store, Update, E, LV, Poke, startLevel, renderTitle, renderMap, renderLevels, renderDex, renderCenter, renderParent, act, go, tap, hint, undo, redo, reset, skipLevel, unlocked, pickAbility, pressSwitch, readyGates, showMemory, makeMemory, storedSolution, solution };
 
 renderTitle();

@@ -49,7 +49,7 @@ def collect():
     const ko = new Set(Object.values(V.L)); V.NAMES.forEach(n => ko.add(n));
     W.WORLDS.filter(w => w.open).forEach(w => {
       ko.add(w.name); ko.add(w.deco.name);
-      P.types.forEach((t, i) => { if (t.split('·').some(x => w.types.includes(x))) ko.add(P.names[i]); });
+      P.types.forEach((t, i) => { if (t.split('·').some(x => w.types.includes(x)) || (w.rare && 'ul'.includes(P.rarity[i + 1] || 'c'))) ko.add(P.names[i]); });
     });
     const en = new Set(V.EN_ALL);
     console.log(JSON.stringify({ ko: [...ko], en: [...en] }));

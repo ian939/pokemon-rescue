@@ -157,6 +157,66 @@
     "assets/board/ob-rock.png"
    ],
    "prompt": "A square sprite sheet image arranged as a strict 3 columns by 2 rows grid of six separate game objects, each seen from a slightly top-down three-quarter view and drawn to fill about 80 percent of its cell. Row 1: a small round pool of bright glowing orange lava with a dark rock rim; a dark volcanic boulder with glowing orange cracks; a fluffy white cloud puff. Row 2: a tall glowing yellow star-shaped crystal pillar; a stone fire brazier with a cheerful flame; a brass telescope on a wooden tripod."
+  },
+  {
+   "id": "region-power",
+   "phase": 1,
+   "tone": "pixel",
+   "refs": [
+    "assets/board/region-cave.webp"
+   ],
+   "prompt": "A wide landscape image with a 2:1 aspect ratio: a top-down pixel art game map of the floor of a cheerful electric power plant, used as the floor of a puzzle board game. Clean grey-blue metal floor plates with a subtle checkered tile texture fill the whole image, tiny rivets and small yellow sparkles spread evenly, yellow and black hazard stripes, humming generators, coiled cables and glowing yellow lamps only along the very left and right edges. The middle area stays open, flat and low-contrast so that square puzzle tiles can be placed on top. No big objects in the middle, no path, no border frame."
+  },
+  {
+   "id": "region-temple",
+   "phase": 1,
+   "tone": "pixel",
+   "refs": [
+    "assets/board/region-sky.webp"
+   ],
+   "prompt": "A wide landscape image with a 2:1 aspect ratio: a top-down pixel art game map of the floor of an ancient rainbow temple, used as the floor of a puzzle board game. Smooth white and pale gold marble floor with a subtle checkered tile texture fills the whole image, tiny rainbow sparkles spread evenly, tall white stone pillars with rainbow crystal tops and soft rainbow light beams only along the very left and right edges. The middle area stays open, flat and low-contrast so that square puzzle tiles can be placed on top. No big objects in the middle, no path, no border frame."
+  },
+  {
+   "id": "party-power",
+   "phase": 1,
+   "tone": "pixel",
+   "refs": [
+    "assets/board/region-cave.webp"
+   ],
+   "prompt": "A wide 16:9 pixel art scene for a children's game: a joyful light festival inside a friendly electric power plant at night. Big humming generators and glowing yellow light bulbs strung across the top, colorful string lights and bunting flags, sparkling little lightning bolts in the air, a tall glowing tesla coil at the far left edge and a big switchboard with blinking lights at the far right edge. The lower two thirds of the image is an open, flat, evenly lit floor area with no objects at all, so that many small characters can stand on it later. No text, no letters, no creatures, no animals, no people, no characters."
+  },
+  {
+   "id": "party-temple",
+   "phase": 1,
+   "tone": "pixel",
+   "refs": [
+    "assets/board/region-sky.webp"
+   ],
+   "prompt": "A wide 16:9 pixel art scene for a children's game: the grand final celebration inside a shining rainbow temple. Tall white pillars and a golden arch along the top, a huge rainbow arching across the sky behind, rainbow crystals glowing, golden confetti and stars falling, a big golden trophy on a pedestal at the far left edge and colorful banners at the far right edge. The lower two thirds of the image is an open, flat, evenly lit floor area with no objects at all, so that many small characters can stand on it later. No text, no letters, no creatures, no animals, no people, no characters."
+  },
+  {
+   "id": "worldmap9",
+   "phase": 1,
+   "tone": "pixel",
+   "refs": [
+    "assets/ui/worldmap7.webp"
+   ],
+   "prompt": "A wide 16:9 landscape image: a cheerful top-down pixel art adventure world map for a children's game, in the same style as the reference. Nine clearly separated areas connected by one winding dirt road: a green forest at bottom-left, a blue river with a small wooden bridge at bottom-center-left, a rocky cave entrance with purple crystals at center-left, a snowy mountain at top-left, a small cozy village with red-roofed houses at top-center-left, a smoking volcano with orange lava at center, a shining castle on a floating island among clouds at top-center-right, a yellow electric power plant with tall pylons and lightning at bottom-right, and a white rainbow temple with a big rainbow at top-right. Soft blue sea around the edges. Plenty of open space around each area. No text, no labels, no markers."
+  },
+  {
+   "id": "obstacles3",
+   "phase": 1,
+   "tone": "item",
+   "refs": [
+    "assets/board/ob-rock.png"
+   ],
+   "prompt": "A square sprite sheet image arranged as a strict 3 columns by 2 rows grid of six separate game objects, each seen from a slightly top-down three-quarter view and drawn to fill about 80 percent of its cell. Row 1: a grey metal electric generator box with yellow warning stripes; a stack of yellow and black striped barrels; a short white marble temple pillar with a small rainbow crystal on top. Row 2: a glowing rainbow-colored crystal cluster; a tall glowing tesla coil lamp with tiny sparks; a shiny golden trophy cup on a small pedestal."
+  },
+  {
+   "id": "portal-tile",
+   "phase": 1,
+   "tone": "tile",
+   "prompt": "A single square top-down game floor tile: a glowing swirling purple and light blue magic warp portal ring set into a round stone floor plate, with tiny sparkles around it, seen from directly above, the round portal fills most of the square."
   }
  ]
 }

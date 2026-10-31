@@ -145,12 +145,25 @@ def main():
     webp("title-bg.png", A / "ui" / "title-bg.webp", 1280)
     sheet("obstacles.png", ["ob-tree", "ob-rock", "ob-bush", "pond", "bridge", "sign"], A / "board", side=128, full=("bridge",))
     sheet("decor.png", ["deco-pot", "deco-fountain", "deco-crystal", "deco-snowman", "deco-bunting", "deco-bench"], A / "ui", height=160)
-    for k in ("cave", "snow", "town", "volcano", "sky"):
+    for k in ("cave", "snow", "town", "volcano", "sky", "power", "temple"):
         webp(f"party-{k}.png", A / "ui" / f"party-{k}.webp", 1280)
     # 월드 6·7
     webp("region-volcano.png", A / "board" / "region-volcano.webp", 1200)
     webp("region-sky.png", A / "board" / "region-sky.webp", 1200)
     webp("worldmap7.png", A / "ui" / "worldmap7.webp", 1600)  # 7지역 지도 (새 이름 — 패드가 옛 지도를 붙들지 않게)
+    # 월드 8·9
+    webp("region-power.png", A / "board" / "region-power.webp", 1200)
+    webp("region-temple.png", A / "board" / "region-temple.webp", 1200)
+    webp("worldmap9.png", A / "ui" / "worldmap9.webp", 1600)  # 9지역 지도
+    square("portal-tile.png", A / "board" / "portal-tile.png")
+    if (GEN / "obstacles3.png").exists():
+        names = ["ob-gen", "ob-drum", "ob-pillar", "ob-rainbow", "deco-tesla", "deco-trophy"]
+        for im, name in zip(cells("obstacles3.png", 3, 2, 0.02), names):
+            im = trim(remove_white(im))
+            if name.startswith("ob-"):
+                save_png(fit(im, 128), A / "board" / f"{name}.png")
+            else:
+                save_png(im.resize((round(im.width * 160 / im.height), 160), Image.LANCZOS), A / "ui" / f"{name}.png")
     if (GEN / "obstacles2.png").exists():
         names = ["ob-lava", "ob-basalt", "ob-cloud", "ob-star", "deco-brazier", "deco-telescope"]
         for im, name in zip(cells("obstacles2.png", 3, 2, 0.02), names):

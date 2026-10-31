@@ -1,4 +1,4 @@
-/* 월드 7개 — 이름 · 바닥 그림 · 구조 포켓몬 타입 · 레벨 범위 · 끝내면 받는 센터 장식
+/* 월드 9개 — 이름 · 바닥 그림 · 구조 포켓몬 타입 · 레벨 범위 · 끝내면 받는 센터 장식
  * open: false 인 월드는 지도에서 "곧 열려요" (레벨 데이터가 아직 없음)
  */
 (function (root) {
@@ -12,6 +12,10 @@
     // 6·7 = 새 규칙 없이 더 어렵게 (v2026-10-25a 사용자 확정) — 7×7, 세 친구, 열매 둘, 능력 셋
     { no: 6, name: "불꽃 화산", en: "Fire Volcano", bg: "volcano", types: ["불꽃", "격투", "강철"], from: 76, to: 90, ops: "rsa", deco: { id: "brazier", name: "불꽃 화로" }, open: true },
     { no: 7, name: "별빛 하늘성", en: "Starry Sky Castle", bg: "sky", types: ["드래곤", "에스퍼", "비행", "고스트"], from: 91, to: 105, ops: "rsa", deco: { id: "telescope", name: "별 망원경" }, open: true },
+    // 8·9 = 새 규칙 하나씩 (v2026-10-31a 사용자 확정) — 8 ⚡ 전기 스위치, 9 🌀 워프 패널 (+ 8 의 스위치)
+    { no: 8, name: "번개 발전소", en: "Thunder Power Plant", bg: "power", types: ["전기", "독"], from: 106, to: 120, ops: "rsaz", deco: { id: "tesla", name: "번개 등" }, open: true },
+    // 9: 악 타입 + 모든 타입의 유니크·전설 (마지막 신전 — 전설을 자주 만난다)
+    { no: 9, name: "무지개 신전", en: "Rainbow Temple", bg: "temple", types: ["악"], rare: true, odds: { c: 20, r: 20, u: 45, l: 15 }, from: 121, to: 135, ops: "rsaz", deco: { id: "trophy", name: "황금 트로피" }, open: true },
   ];
   /** 희귀도 비율 (plan §0.5) — 월드 마지막 레벨은 유니크·전설 확정 */
   const RARITY_ODDS = { c: 70, r: 20, u: 8, l: 2 };
