@@ -405,3 +405,13 @@ img { image-rendering: pixelated; -webkit-user-drag: none; }
 .btn.abil.sw span.zap-ico { display: inline; font-size: 26px; line-height: 1; }
 .wnode b { white-space: nowrap; }
 .abils.n4 .btn.abil.sw span.zap-ico, .abils.n5 .btn.abil.sw span.zap-ico { display: none; } /* 버튼 넷 이상: 노랑·파랑 바탕 + 피카츄·라이츄 그림만 */
+
+/* ---------- 🔥 하드 모드 (v2026-11-01a) — 길이 안 빛남, 가짜 길 많음 ---------- */
+.mode-pick { position: relative; z-index: 3; display: flex; gap: 8px; justify-content: center; margin: -4px 0 4px; }
+.mode-pick .chip { min-width: 96px; font-size: 18px; }
+.mode-pick .chip.hard.on { background: #ff7a45; color: #fff; }
+.screen-map.hard .bar h2, .screen-levels.hard .bar h2 { color: #ffd2b8; }
+.screen-game.hard .board-wrap { box-shadow: inset 0 0 0 4px #ff7a45, 0 5px 0 rgba(0, 0, 0, .4); }
+.hard-tag { margin-left: auto; font-style: normal; font-size: 15px; font-weight: 700; color: #fff; background: #ff7a45; border: 2px solid var(--ink); border-radius: 8px; padding: 1px 6px; text-shadow: none; }
+.hard-box p { font-size: 19px; line-height: 1.5; }
+.deco-get .crown { font-size: 54px; margin: 0; }

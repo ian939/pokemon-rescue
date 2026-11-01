@@ -109,7 +109,7 @@ def play_solution(pg, drag_every=0):
             drag_cell(pg, a["i"], a["to"])  # 돌리기도 되는 조각은 탭하면 돌아가므로 밀기는 늘 끌어서
         else:
             tap_cell(pg, a["i"])
-        if k < len(sol) - 1 and pg.locator("#goBtn.ready").count():
+        if k < len(sol) - 1 and pg.evaluate("() => window.__T.readyGates().length"):  # 하드는 버튼이 안 빛나므로 실제 연결로
             pg.click("#goBtn")
             idle(pg)
     return len(sol)
@@ -486,6 +486,43 @@ def main():
             if last != 135:
                 pg.wait_for_selector(".rocket-box")
                 close_modal(pg, "ok")
+        # ---- 🔥 하드 모드: 노말 9 를 끝내면 열림 → 1-1 부터 (길이 안 빛남, 가짜 길)
+        pg.wait_for_selector(".hard-box")
+        check(True, "노말 월드 9 끝 → 하드 모드가 열렸어요")
+        pg.screenshot(path=str(OUT / "40-hard-open.png"))
+        close_modal(pg, "go")
+        pg.wait_for_selector(".rocket-box")
+        check("하드" in pg.locator(".rocket-box").inner_text(), "하드 시작 → 로켓단 하드 연출")
+        close_modal(pg, "ok")
+        check(pg.evaluate("() => window.__T.isHard()") and pg.locator('.lvbtn[data-no="1"]:not(.locked)').count() == 1 and pg.locator(".lvbtn.locked").count() == 14, "하드 1-1 만 열림 (기록 따로)")
+        pg.click('.lvbtn[data-no="1"]', force=True)
+        pg.wait_for_selector(".board .tile")
+        check(pg.locator(".hard-tag").count() == 1, "하드 표시")
+        nobs = pg.evaluate("() => window.__T.LV[1].cells.filter(c => c[0] === '#').length")
+        check(pg.locator(".tile.path").count() > 6 and nobs < 12, f"하드 L01: 가짜 길로 판을 더 채움 (장애물 {nobs}개)")
+        pg.screenshot(path=str(OUT / "41-hard-L01.png"))
+        play_solution(pg)
+        check(pg.locator(".tile.lit").count() == 0 and pg.locator("#goBtn.ready").count() == 0 and pg.locator(".gate.goal.lit").count() == 0, "하드: 이어져도 빛나지 않음·출발 버튼도 그대로")
+        pg.click("#goBtn")
+        pg.wait_for_selector(".res", timeout=10000)
+        check(pg.evaluate("() => window.__T.Store.data.levels.H01 && window.__T.Store.data.levels.H01.done") is True, "하드 기록은 H01 로 따로 저장")
+        close_modal(pg, "map")
+        bad = []
+        for q in (16, 31, 46, 61, 64, 79, 90, 105, 106, 111, 121, 125, 135):
+            ok, n, stars = solve_level(q, drag_every=2)
+            if stars != 3:
+                bad.append((q, stars))
+            if q in (46, 90, 135):
+                pg.screenshot(path=str(OUT / f"42-hard-L{q}.png"))
+            close_modal(pg, "map")
+        check(not bad, f"하드 대표 판 13개(월드마다) 구조·별 3 {bad or ''}")
+        pg.evaluate("() => window.__T.renderMap()")
+        pg.wait_for_selector(".mode-pick")
+        check(pg.locator(".mode-pick .chip.hard.on").count() == 1, "지도: 노말/하드 고르기 (하드 켜짐)")
+        pg.screenshot(path=str(OUT / "43-hard-map.png"))
+        pg.click('.mode-pick [data-mode="normal"]')
+        check(not pg.evaluate("() => window.__T.isHard()") and pg.evaluate("() => window.__T.Store.data.levels.L01.done") is True, "노말로 돌아가면 노말 기록 그대로")
+        pg.evaluate("() => window.__T.renderMap()")
         pg.wait_for_selector(".wnode")
 
         # 일부러 많이 움직이면 별이 줄어든다

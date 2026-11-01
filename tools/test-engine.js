@@ -365,5 +365,40 @@ t("소개 레벨: L01 은 돌릴 수 있는 곡선 1개 · L16 은 밀 수 있�
   assert.strictEqual(b.length, 1); assert.strictEqual(LEVELS[15].par, 1);
 });
 
+// ---------- 🔥 하드 모드 레벨 (v2026-11-01a): 노말과 같은 맵 + 가짜 길 ----------
+let HARD = [];
+try { HARD = require("../data/levels-hard.js"); } catch (e) { HARD = []; }
+if (!RANGE_ARG || process.argv.includes("--hard")) {
+  t("하드 레벨이 노말과 같은 수·같은 번호", () => {
+    assert.deepStrictEqual(HARD.map((h) => h.no), LEVELS.map((l) => l.no));
+  });
+  for (const H of HARD) {
+    t(`${H.id}: 같은 맵 + 가짜 길 · 노말보다 안 쉬움 · 풀이`, () => {
+      const N = LEVELS.find((l) => l.no === H.no);
+      assert.strictEqual(H.id, "H" + N.id.slice(1));
+      for (const k of ["n", "ops", "world", "start", "starts", "goal", "abil"]) assert.deepStrictEqual(H[k], N[k], k + " 이 노말과 다름");
+      assert.deepStrictEqual(E.validate(H), []);
+      // 정답 길·물·낭떠러지·덤불·빈칸은 그대로, 장애물만 가짜 길로
+      N.cells.forEach((c, i) => {
+        if (c[0] === "#" && c !== "#b") return;
+        assert.strictEqual(H.cells[i], c, `칸 ${i} 가 바뀜`);
+      });
+      const obs = (L) => L.cells.filter((c) => c[0] === "#" && c !== "#b").length;
+      assert.ok(obs(N) === 0 || obs(H) < obs(N), "장애물이 안 줄었음");
+      assert.ok(H.par >= N.par, `노말(${N.par})보다 쉬움(${H.par})`);
+      // 저장된 풀이가 진짜로 풀림 (이어지는 대로 구조)
+      let st = E.makeState(H);
+      const res = new Set();
+      for (const a of H.sol) {
+        assert.ok(E.actions(st, H.ops).some((x) => x.t === a.t && x.i === a.i && x.to === a.to && x.k === a.k && x.g === a.g), "풀이에 불법 조작 " + JSON.stringify(a));
+        st = E.apply(st, a);
+        E.wins(st, H).forEach((w, k) => { if (w) res.add(k); });
+      }
+      assert.strictEqual(res.size, E.startsOf(H).length, "저장된 풀이로 안 풀림");
+      assert.strictEqual(H.sol.length, H.par);
+    });
+  }
+}
+
 console.log(`\n${fail ? "❌" : "✅"} ${pass}개 통과 · ${fail}개 실패`);
 process.exit(fail ? 1 : 0);
