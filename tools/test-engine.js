@@ -400,5 +400,49 @@ if (!RANGE_ARG || process.argv.includes("--hard")) {
   }
 }
 
+// ---------- 🌈 슈퍼하드 레벨 (v2026-11-06a): 하드 맵의 거울 판 ----------
+let SUPER = [];
+try { SUPER = require("../data/levels-super.js"); } catch (e) { SUPER = []; }
+if (!RANGE_ARG || process.argv.includes("--hard")) {
+  t("슈퍼하드 레벨이 하드와 같은 수·같은 번호", () => {
+    assert.deepStrictEqual(SUPER.map((h) => h.no), HARD.map((l) => l.no));
+  });
+  for (const S of SUPER) {
+    t(`${S.id}: 하드를 뒤집은 판(${S.mirror}) · 풀이`, () => {
+      const H = HARD.find((l) => l.no === S.no);
+      assert.strictEqual(S.id, "S" + H.id.slice(1));
+      for (const k of ["n", "ops", "world", "abil"]) assert.deepStrictEqual(S[k], H[k], k);
+      assert.deepStrictEqual(E.validate(S), []);
+      const n = S.n;
+      if (!S.unmirrored) {
+        // 문은 좌우(h) 또는 위아래(v)로 뒤집힘
+        const h = S.mirror === "h", r = S.mirror === "r";
+        const SW = r ? null : h ? { E: "W", W: "E" } : { N: "S", S: "N" };
+        const OPP = { N: "S", S: "N", E: "W", W: "E" };
+        const mg = (g) => (!SW ? { side: OPP[g.side], at: n - 1 - g.at } : SW[g.side] ? { side: SW[g.side], at: g.at } : { side: g.side, at: n - 1 - g.at });
+        assert.deepStrictEqual(S.goal, mg(H.goal));
+        // 칸 종류(장애물·빈칸·물·낭떠러지·길 모양)는 거울 자리에 그대로
+        H.cells.forEach((c, i) => {
+          const j = r ? n * n - 1 - i : h ? Math.floor(i / n) * n + (n - 1 - (i % n)) : (n - 1 - Math.floor(i / n)) * n + (i % n);
+          const kind = (x) => (x[0] === "#" ? x : x === "." ? "." : x[0] === "~" || x[0] === "^" ? x[0] + x[1] : x[0] + x.slice(2).replace(/[A-C]/, "")); // 길은 모양+표시만 (방향 빼고)
+          assert.strictEqual(kind(S.cells[j]), kind(c), `칸 ${i}→${j}`);
+        });
+      }
+      assert.ok(S.par >= H.par - 2, `하드(${H.par})보다 너무 쉬움(${S.par})`);
+      let st = E.makeState(S);
+      const res = new Set();
+      for (const a of S.sol) {
+        // 능력은 쓸 수 있는 칸이면 됨 (덩굴은 같은 무리 어느 낭떠러지를 눌러도 같다)
+        const legal = a.t === "a" ? E.canUse(st, a.k, a.i) : E.actions(st, S.ops).some((x) => x.t === a.t && x.i === a.i && x.to === a.to && x.g === a.g);
+        assert.ok(legal, "불법 조작 " + JSON.stringify(a));
+        st = E.apply(st, a);
+        E.wins(st, S).forEach((w, k) => { if (w) res.add(k); });
+      }
+      assert.strictEqual(res.size, E.startsOf(S).length, "저장된 풀이로 안 풀림");
+      assert.strictEqual(S.sol.length, S.par);
+    });
+  }
+}
+
 console.log(`\n${fail ? "❌" : "✅"} ${pass}개 통과 · ${fail}개 실패`);
 process.exit(fail ? 1 : 0);

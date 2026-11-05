@@ -9,6 +9,7 @@
 - 힌트 3단계(움직일 수 있는 조각 → 바꿔야 할 조각 → 다음 한 동작), 되돌리기·다시·처음부터, 막히면 건너뛰기.
 - 구조한 포켓몬은 도감과 센터에 모이고, 월드를 끝낼 때마다 센터 장식이 생긴다. 월드 3~9를 끝내면 친구들이 행복해하는 기념 그림이 도감에 들어간다.
 - 노말 1~9를 끝내면 🔥 **하드 모드**: 같은 맵인데 이어진 길이 빛나지 않고, 장애물 자리가 가짜 길로 채워진다.
+- 하드 9를 끝내면 🌈 **슈퍼하드**: 하드 맵의 거울 판, 힌트·건너뛰기·조각 표시 없음, 되돌리기 3번, 출발 기회 ♥♥♥, 무지개 신전은 안개. 구한 친구는 ✨ 반짝이로.
 - 짧은 영어 한마디: Let's go! · Rescued! · Three stars!
 
 ## 구성
@@ -19,6 +20,7 @@
 | `js/engine.js` | 퍼즐 규칙 (타일·포트·회전·밀기·능력·열매·여러 친구·⚡ 스위치·🌀 워프·연결 판정·BFS 솔버). 화면과 분리, Node 에서도 돈다 |
 | `data/levels.js` | 레벨 135개 (월드 1~9) (자동 생성 — 손으로 고치지 않는다) |
 | `data/levels-hard.js` | 하드 레벨 135개 `H01`~ (노말 맵 + 가짜 길, `node tools/gen-hard.js`) |
+| `data/levels-super.js` | 슈퍼하드 135개 `S01`~ (하드 맵의 거울·180° 판, `node tools/gen-super.js`) |
 | `js/worlds.js` | 월드 9개 (이름·바닥·구조 포켓몬 타입·장식) |
 | `data/pokemon.js` | 포켓몬 1025마리 이름·타입·희귀도 (포켓몬 윷놀이 데이터에서 추출) |
 | `js/app.js` | 지도·레벨·보드·연출·도감·센터·보호자 화면·새 버전 감지 |
@@ -31,12 +33,13 @@
 ```bash
 node tools/gen-levels.js        # 새 레벨만 생성 + 솔버 선별 → data/levels.js (있는 레벨은 그대로 · --redo L97 · --all 은 몇 시간) (소개 레벨 L01·L16·L31 은 tools/levels-hand.js)
 node tools/gen-hard.js          # 하드 레벨 (없는 것만 · --redo H97, 약 4분)
-node tools/test-engine.js       # 엔진·솔버 단위 테스트 + 레벨 135개 + 하드 135개 검증 (약 25분, `106-135` 처럼 범위만도)
+node tools/gen-super.js         # 슈퍼하드 레벨 (하드를 뒤집기, 약 2분)
+node tools/test-engine.js       # 엔진·솔버 단위 테스트 + 레벨 135개 + 하드·슈퍼하드 각 135개 검증 (약 25분, `106-135` 처럼 범위만도)
 PYTHONUTF8=1 python tools/test-ui.py        # 화면 (Playwright, 135레벨을 실제로 눌러 푼다, 약 50분)
 python tools/gen-voice.py       # 목소리 녹음 (말을 바꾸면 다시)
 python tools/gen-art.py && python tools/postprocess.py   # Codex 도트 그림 → assets/
 node tools/extract-pokemon.js   # 포켓몬 데이터 다시 뽑기
 ```
 
-그림: 포켓몬은 PokeAPI 도트, 지형·센터·장식·배경은 Codex(GPT 이미지) 도트, 숲·설산·마을 바닥과 나무 블록은
+그림: 포켓몬은 PokeAPI 도트(반짝이 `assets/sprites-shiny` 도), 지형·센터·장식·배경은 Codex(GPT 이미지) 도트, 숲·설산·마을 바닥과 나무 블록은
 포켓몬 사다리 대모험, 센터 실내는 포켓몬 윷놀이에서 가져왔다. 개인 비상업용 팬 게임.

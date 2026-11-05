@@ -15,6 +15,8 @@ const TEST = QS.has("test");
 // 노말 / 하드(같은 맵 + 가짜 길, 길이 안 빛남 — v2026-11-01a 사용자 확정). LV 는 지금 모드의 레벨 묶음
 const LVN = Object.fromEntries(window.LEVELS.map((l) => [l.no, l]));
 const LVH = Object.fromEntries((window.LEVELS_HARD || []).map((l) => [l.no, l]));
+// 🌈 슈퍼하드 (v2026-11-06a 사용자 확정): 하드 맵의 거울 판 + 표시·힌트·건너뛰기 없음 · 되돌리기 3번 · ♥ 3번 · 월드 9 안개
+const LVS = Object.fromEntries((window.LEVELS_SUPER || []).map((l) => [l.no, l]));
 let LV = LVN;
 
 // ---------- 저장 ----------
@@ -24,7 +26,7 @@ const Store = {
   load() {
     try { this.data = JSON.parse(localStorage.getItem(this.KEY) || "null"); } catch (e) { this.data = null; }
     const d = this.data || {};
-    this.data = Object.assign({ levels: {}, dex: {}, dexOrder: [], deco: [], seen: {}, last: 1, memories: {}, mode: "normal", hardClear: {} }, d);
+    this.data = Object.assign({ levels: {}, dex: {}, dexOrder: [], deco: [], seen: {}, last: 1, memories: {}, mode: "normal", hardClear: {}, superClear: {}, shiny: {} }, d);
     this.data.settings = Object.assign({ sound: true, voice: true, hintMax: 3, openAll: false, autoSolve: false }, d.settings || {});
   },
   save() { try { localStorage.setItem(this.KEY, JSON.stringify(this.data)); } catch (e) { /* 저장 공간 없음 */ } },
@@ -139,6 +141,7 @@ const Poke = {
   types: (n) => PK.types[n - 1].split("·"),
   rar: (n) => PK.rarity[n] || "c",
   img: (n) => `assets/sprites/${n}.png`,
+  shinyImg: (n) => `assets/sprites-shiny/${n}.png`, // ✨ 반짝이(색이 다른) 공식 도트 — 슈퍼하드 보상
   _pool: {},
   pool(w) {
     if (!this._pool[w.no]) this._pool[w.no] = PK.types.map((t, i) => [i + 1, t.split("·")])
@@ -163,15 +166,21 @@ const Poke = {
 const RAR_CLASS = { c: "rc", r: "rr", u: "ru", l: "rl" };
 function rarBadge(n) { const r = Poke.rar(n); return `<span class="rar ${RAR_CLASS[r]}">${window.RARITY_NAME[r]}</span>`; }
 
+/** 퍼즐 중 포켓몬 그림: 슈퍼하드는 반짝이 */
+const pimg = (n) => (G.super ? Poke.shinyImg(n) : Poke.img(n));
 // ---------- 레벨 진행 ----------
 /** 하드 모드: 노말 월드 9(무지개 신전) 마지막 판을 깨면 열린다 */
 function hardOpen() { return Object.keys(LVH).length > 0 && (Store.data.deco.includes("trophy") || Store.data.settings.openAll); }
-const isHard = () => LV === LVH;
+/** 슈퍼하드: 하드 월드 9 를 끝내면 열린다 (사용자 확정) */
+function superOpen() { return Object.keys(LVS).length > 0 && (!!Store.data.hardClear[9] || Store.data.settings.openAll); }
+const isSuper = () => LV === LVS;
+const isHard = () => LV === LVH || LV === LVS; // 슈퍼하드도 하드처럼 길이 안 빛남
 function setMode(m) {
-  Store.data.mode = m === "hard" && hardOpen() ? "hard" : "normal";
-  LV = Store.data.mode === "hard" ? LVH : LVN;
+  Store.data.mode = m === "super" && superOpen() ? "super" : m === "hard" && hardOpen() ? "hard" : "normal";
+  LV = { normal: LVN, hard: LVH, super: LVS }[Store.data.mode];
   Store.save();
 }
+const modeOpen = () => (isSuper() ? superOpen() : isHard() ? hardOpen() : true);
 const worldOf = (no) => window.WORLDS.find((w) => no >= w.from && no <= w.to);
 const lvState = (no) => Store.data.levels[LV[no] ? LV[no].id : "L" + no] || {};
 function setLv(no, patch) {
@@ -183,7 +192,7 @@ function unlocked(no) {
   if (!LV[no]) return false;
   const w = worldOf(no);
   if (!w || !w.open) return false;
-  if (Store.data.settings.openAll || no === 1) return !isHard() || hardOpen();
+  if (Store.data.settings.openAll || no === 1) return modeOpen();
   const p = lvState(no - 1);
   return !!(p.done || p.skipped);
 }
@@ -243,7 +252,7 @@ function renderTitle() {
       <div class="title-cast">${show5.map((n, k) => `<img src="${Poke.img(n)}" alt="" style="animation-delay:${k * 0.2}s">`).join("")}</div>
     </div>
     <div class="title-menu">
-      <button class="btn big primary" data-a="play">▶ ${isHard() ? "🔥 하드 구조하러 가기" : "구조하러 가기"}</button>
+      <button class="btn big primary" data-a="play">▶ ${isSuper() ? "🌈 슈퍼하드 구조하러 가기" : isHard() ? "🔥 하드 구조하러 가기" : "구조하러 가기"}</button>
       <div class="row">
         <button class="btn big" data-a="dex">📖 도감</button>
         <button class="btn big" data-a="center">🏥 센터</button>
@@ -276,22 +285,22 @@ function renderMap() {
   const W = window.WORLDS;
   show(`
   <div class="map">
-    <header class="bar"><button class="btn" data-a="back">◀ 처음</button><h2>🗺 구조 지도${isHard() ? " · 🔥 하드" : ""}</h2><span class="bar-r">⭐ ${W.reduce((s, w) => s + worldStars(w).stars, 0)}</span></header>
-    ${hardOpen() ? `<div class="mode-pick"><button class="chip ${isHard() ? "" : "on"}" data-mode="normal">노말</button><button class="chip hard ${isHard() ? "on" : ""}" data-mode="hard">🔥 하드</button></div>` : ""}
+    <header class="bar"><button class="btn" data-a="back">◀ 처음</button><h2>🗺 구조 지도${isSuper() ? " · 🌈 슈퍼하드" : isHard() ? " · 🔥 하드" : ""}</h2><span class="bar-r">⭐ ${W.reduce((s, w) => s + worldStars(w).stars, 0)}</span></header>
+    ${hardOpen() ? `<div class="mode-pick"><button class="chip ${isHard() ? "" : "on"}" data-mode="normal">노말</button><button class="chip hard ${isHard() && !isSuper() ? "on" : ""}" data-mode="hard">🔥 하드</button>${superOpen() ? `<button class="chip super ${isSuper() ? "on" : ""}" data-mode="super">🌈 슈퍼하드</button>` : ""}</div>` : ""}
     <div class="map-box"><div class="map-art">
       ${W.map((w, k) => {
         const st = worldStars(w), ok = worldUnlocked(w);
         const tag = !w.open ? "곧 열려요" : !ok ? "🔒" : `${st.done}/${st.total}`;
         return `<button class="wnode ${ok ? "" : "locked"} ${w.open ? "" : "soon"}" data-w="${w.no}" style="left:${MAP_POS[k][0]}%;top:${MAP_POS[k][1]}%">
           <span class="wthumb" style="background-image:url(assets/board/region-${w.bg}.webp)">${w.no}</span>
-          <b>${esc(w.name)}${Store.data.hardClear[w.no] ? " 👑" : ""}</b><small>${tag}</small></button>`;
+          <b>${esc(w.name)}${Store.data.superClear[w.no] ? " 🌈" : Store.data.hardClear[w.no] ? " 👑" : ""}</b><small>${tag}</small></button>`;
       }).join("")}
     </div></div>
-  </div>`, "screen-map" + (isHard() ? " hard" : ""));
+  </div>`, "screen-map" + (isSuper() ? " super" : isHard() ? " hard" : ""));
   $("#app").onclick = (e) => {
     if (e.target.closest("[data-a=back]")) return renderTitle();
     const m = e.target.closest("[data-mode]");
-    if (m) { setMode(m.dataset.mode); SFX.pop(); if (isHard()) say(L.hardIntro); return renderMap(); }
+    if (m) { setMode(m.dataset.mode); SFX.pop(); if (isSuper()) say(L.superIntro); else if (isHard()) say(L.hardIntro); return renderMap(); }
     const b = e.target.closest("[data-w]");
     if (!b) return;
     const w = W[+b.dataset.w - 1];
@@ -310,7 +319,7 @@ async function renderLevels(w) {
   const st = worldStars(w);
   show(`
   <div class="levels" style="--bg:url(../assets/board/region-${w.bg}.webp)">
-    <header class="bar"><button class="btn" data-a="back">◀ 지도</button><h2>${isHard() ? "🔥 " : ""}${w.no}. ${esc(w.name)}</h2><span class="bar-r">⭐ ${st.stars}/${st.total * 3}</span></header>
+    <header class="bar"><button class="btn" data-a="back">◀ 지도</button><h2>${isSuper() ? "🌈 " : isHard() ? "🔥 " : ""}${w.no}. ${esc(w.name)}</h2><span class="bar-r">⭐ ${st.stars}/${st.total * 3}</span></header>
     <div class="lv-grid">
       ${Array.from({ length: w.to - w.from + 1 }, (_, k) => {
         const no = w.from + k, s = lvState(no), ok = unlocked(no);
@@ -319,7 +328,7 @@ async function renderLevels(w) {
           <b>${ok ? k + 1 : "🔒"}</b><small>${stars}</small>${k === w.to - w.from ? `<img class="lv-last" src="assets/ui/center-house.png" alt="">` : ""}</button>`;
       }).join("")}
     </div>
-  </div>`, "screen-levels" + (isHard() ? " hard" : ""));
+  </div>`, "screen-levels" + (isSuper() ? " super" : isHard() ? " hard" : ""));
   $("#app").onclick = (e) => {
     if (e.target.closest("[data-a=back]")) return renderMap();
     const b = e.target.closest("[data-no]");
@@ -328,10 +337,11 @@ async function renderLevels(w) {
     if (!unlocked(no)) { SFX.no(); toast("🔒 " + L.locked); say(L.locked); return; }
     startLevel(no);
   };
-  const seenKey = (isHard() ? "h" : "") + w.no;
+  const seenKey = (isSuper() ? "s" : isHard() ? "h" : "") + w.no;
   if (!Store.data.seen[seenKey]) {
     Store.data.seen[seenKey] = 1; Store.save();
-    if (isHard()) await rocketScene(L.hardRocket, L.hardIntro);
+    if (isSuper()) await rocketScene(L.superRocket, w.no === 9 ? L.fogIntro : L.superIntro);
+    else if (isHard()) await rocketScene(L.hardRocket, L.hardIntro);
     else await rocketScene(L.rocketIntro, L.rocketIntro2);
   }
 }
@@ -367,6 +377,11 @@ function startLevel(no) {
   Object.assign(G, {
     lv, w, gates,
     hard: isHard(),
+    super: isSuper(),
+    lives: 3, // 🌈 출발 기회 ♥♥♥
+    undoLeft: 3, // 🌈 되돌리기 3번
+    fog: isSuper() && w.no === 9, // 🌈 월드 9 안개
+    touch: [],
     init: E.makeState(lv),
     state: E.makeState(lv),
     moves: 0,
@@ -384,9 +399,9 @@ function startLevel(no) {
   });
   renderGame();
   const names = G.pokes.map(Poke.name);
-  const intro = lv.intro ? L[INTRO_SAY[lv.intro]] : null;
+  const intro = lv.intro && !G.super ? L[INTRO_SAY[lv.intro]] : null; // 슈퍼하드는 소개 안내도 없음
   say(...names, L.lost, intro);
-  if (lv.intro) introGuide();
+  if (lv.intro && !G.super) introGuide();
 }
 /** 구조할 포켓몬 — 두 마리면 서로 다르게 */
 function pickPokes(w, no, k) {
@@ -427,9 +442,9 @@ function renderGame() {
   <div class="game" style="--bg:url(../assets/board/region-${w.bg}.webp)">
     <div class="board-wrap" id="boardWrap"><div class="board" id="board"></div></div>
     <aside class="panel">
-      <div class="pan-head"><button class="btn small" data-a="back" aria-label="레벨 고르기">◀</button><b>${lvLabel(lv.no)}</b><span>${esc(w.name)}</span>${G.hard ? `<i class="hard-tag">🔥 하드</i>` : ""}</div>
+      <div class="pan-head"><button class="btn small" data-a="back" aria-label="레벨 고르기">◀</button><b>${lvLabel(lv.no)}</b><span>${esc(w.name)}</span>${G.super ? `<i class="hard-tag super">🌈 슈퍼</i>` : G.hard ? `<i class="hard-tag">🔥 하드</i>` : ""}</div>
       <div class="win-box who ${G.pokes.length > 1 ? "two" : ""} ${G.pokes.length > 2 ? "three" : ""}">
-        ${G.pokes.map((p, k) => `<div class="who-one" data-g="${k}"><img src="${Poke.img(p)}" alt=""><div><b>${esc(Poke.name(p))}</b>${rarBadge(p)}<small>${G.pokes.length > 1 ? "" : "길을 잃었어요"}</small></div></div>`).join("")}
+        ${G.pokes.map((p, k) => `<div class="who-one" data-g="${k}"><img src="${pimg(p)}" alt=""><div><b>${esc(Poke.name(p))}</b>${rarBadge(p)}<small>${G.pokes.length > 1 ? "" : "길을 잃었어요"}</small></div></div>`).join("")}
       </div>
       ${nBtn ? `<div class="abils n${nBtn}">${swKeys.map((g) => `<button class="btn abil sw sw-${g}" data-z="${g}" aria-label="${SW_INFO[g].name} 스위치">
         <img src="${Poke.img(SW_INFO[g].poke)}" alt=""><span class="zap-ico">⚡</span></button>`).join("")}${abKeys.map((k) => `<button class="btn abil" data-k="${k}" aria-label="${ABIL_INFO[k].name} ${ABIL_INFO[k].what}">
@@ -437,18 +452,18 @@ function renderGame() {
       <div class="win-box moves"><span>움직인 횟수</span><b id="mv">0</b><small>⭐⭐⭐ = ${lv.par}번 안에${s.best ? ` · 최고 ${s.best}번` : ""}</small></div>
       <button id="goBtn" class="btn huge go" data-a="go">출발!</button>
       <div class="tools">
-        <button class="btn" data-a="undo" id="undoBtn" aria-label="되돌리기">↩<small>되돌리기</small></button>
+        <button class="btn" data-a="undo" id="undoBtn" aria-label="되돌리기">↩<small>${G.super ? `되돌리기 <b id="undoLeft">${G.undoLeft}</b>` : "되돌리기"}</small></button>
         <button class="btn" data-a="redo" id="redoBtn" aria-label="다시 하기">↪<small>다시</small></button>
         <button class="btn" data-a="reset" id="resetBtn" aria-label="처음부터">🔄<small>처음부터</small></button>
-        <button class="btn" data-a="hint" id="hintBtn" aria-label="힌트">💡<small>힌트</small></button>
+        ${G.super ? `<div class="btn hearts" id="hearts" aria-label="출발 기회">${"♥".repeat(G.lives)}<small>출발 기회</small></div>` : `<button class="btn" data-a="hint" id="hintBtn" aria-label="힌트">💡<small>힌트</small></button>`}
       </div>
-      <button class="btn skip hidden" data-a="skip" id="skipBtn">⏭ 다음에 도전</button>
+      ${G.super ? "" : `<button class="btn skip hidden" data-a="skip" id="skipBtn">⏭ 다음에 도전</button>`}
       ${Store.data.settings.autoSolve ? `<button class="btn skip" data-a="auto">🤖 풀어 보기</button>` : ""}
     </aside>
   </div>
   <svg width="0" height="0" style="position:absolute"><defs>
     <pattern id="dirt" patternUnits="userSpaceOnUse" width="40" height="40"><image href="assets/board/lane-dirt.webp" width="40" height="40" preserveAspectRatio="none"/></pattern>
-  </defs></svg>`, "screen-game w" + w.no + (G.hard ? " hard" : ""));
+  </defs></svg>`, "screen-game w" + w.no + (G.hard ? " hard" : "") + (G.super ? " super" : "") + (G.fog ? " fog" : ""));
   buildBoard();
   window.onresize = () => { if (!G.busy) buildBoard(); };
   $("#app").onclick = (e) => {
@@ -529,12 +544,12 @@ function buildBoard() {
     <div class="field" style="left:${px(1)}px;top:${px(1)}px;width:${S * n}px;height:${S * n}px"></div>
     <div class="holes"></div>
     ${G.gates.map((g, k) => { return `<div class="gate start" data-g="${k}" style="${gateBox(gatePos(n, g))}">${roadSVG([toBoard(g)], "stub")}
-      <img class="gp" src="${Poke.img(G.pokes[k])}" alt=""><span class="bubble">?</span></div>`; }).join("")}
+      <img class="gp" src="${pimg(G.pokes[k])}" alt=""><span class="bubble">?</span></div>`; }).join("")}
     <div class="gate goal" style="${gateBox(gp)}">${roadSVG([toBoard(lv.goal)], "stub")}
       <img class="house" src="assets/ui/center-house.png" alt=""></div>
     <div class="tiles"></div>
     <div class="marks"></div>
-    <div class="walker hidden"><img src="${Poke.img(G.pokes[0])}" alt=""></div>
+    <div class="walker hidden"><img src="${pimg(G.pokes[0])}" alt=""></div>
     <div class="finger hidden">👆</div>`;
   G.els = {};
   G.sig = {};
@@ -605,10 +620,15 @@ function sync(fresh) {
     el.classList.toggle("hint2", !!(G.hintIds && G.hintIds.has(t.id)));
   });
   for (const id in G.els) if (!live.has(id)) G.els[id].style.display = "none"; // 태운 덤불 (되돌리면 다시 보임)
+  if (G.fog) {
+    const vis = fogVisible();
+    state.cells.forEach((t, i) => { if (t) G.els[t.id].classList.toggle("fogged", !vis.has(i)); });
+  }
+  const visH = G.fog ? fogVisible() : null;
   $(".holes").innerHTML = state.cells.map((t, i) => {
     if (t) return "";
     const [x, y] = cellXY(i);
-    return `<div class="hole" style="left:${px(x)}px;top:${px(y)}px"></div>`;
+    return `<div class="hole ${visH && !visH.has(i) ? "fogged" : ""}" style="left:${px(x)}px;top:${px(y)}px"></div>`;
   }).join("");
   const ready = readyGates();
   G.gates.forEach((_, k) => {
@@ -627,7 +647,7 @@ function sync(fresh) {
   $("#board").classList.toggle("aiming", !!G.aim);
   $("#goBtn").classList.toggle("ready", show && ready.length > 0);
   $("#mv").textContent = G.moves;
-  $("#undoBtn").disabled = !G.hist.length;
+  $("#undoBtn").disabled = !G.hist.length || (G.super && G.undoLeft <= 0);
   $("#redoBtn").disabled = !G.redo.length;
   $("#resetBtn").disabled = G.moves === 0 && !G.hist.length;
   $$(".abil[data-k]").forEach((b) => {
@@ -645,6 +665,15 @@ function sync(fresh) {
   G.wasNeed = need;
 }
 
+/** 🌫 안개(슈퍼하드 월드 9): 출발 문·센터 문 옆 칸과 최근에 만진 두 칸의 둘레(3×3)만 보인다 */
+function fogVisible() {
+  const n = G.lv.n, vis = new Set();
+  const around = (c) => { const x = c % n, y = Math.floor(c / n); for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const X = x + dx, Y = y + dy; if (X >= 0 && Y >= 0 && X < n && Y < n) vis.add(Y * n + X); } };
+  G.gates.forEach((g) => around(E.gateCell(n, g)));
+  around(E.gateCell(n, G.lv.goal));
+  G.touch.slice(-2).forEach(around);
+  return vis;
+}
 // ---------- 손가락 조작 ----------
 function bindBoard(board) {
   let drag = null;
@@ -687,6 +716,7 @@ function bindBoard(board) {
 }
 function tap(i, el) {
   const t = G.state.cells[i], ops = G.lv.ops;
+  if (G.fog) { G.touch.push(i); sync(true); }
   if (G.aim) {
     const k = G.aim;
     if (E.canUse(G.state, k, i)) return act({ t: "a", k, i });
@@ -728,6 +758,7 @@ function act(a) {
   G.state = E.apply(G.state, a);
   G.moves++;
   G.aim = null;
+  if (G.fog && a.i != null) G.touch.push(a.t === "s" ? a.to : a.i);
   afterChange();
   if (a.t === "r") SFX.turn();
   else if (a.t === "s") SFX.slide();
@@ -760,6 +791,11 @@ function afterChange() {
 }
 function undo() {
   if (!G.hist.length) return;
+  if (G.super) {
+    if (G.undoLeft <= 0) { SFX.no(); toast("↩ " + L.superNoUndo); return say(L.superNoUndo); }
+    G.undoLeft--;
+    $("#undoLeft").textContent = G.undoLeft;
+  }
   G.redo.push({ state: G.state, moves: G.moves });
   const h = G.hist.pop();
   G.state = h.state; G.moves = h.moves; G.aim = null;
@@ -831,6 +867,7 @@ function flashAbil(sol) {
   }
 }
 function hint() {
+  if (G.super) return;
   if (readyGates().length) { say(G.hard ? L.hardTryGo : L.alreadyOk); if (!G.hard) $("#goBtn").classList.add("ready"); return; }
   G.hint = Math.min(G.hint + 1, Store.data.settings.hintMax);
   if (G.hint >= 3 || G.hint >= Store.data.settings.hintMax) $("#skipBtn").classList.remove("hidden");
@@ -874,7 +911,7 @@ function center(x, y) { return [cpx(x), cpx(y)]; }
 async function walk(k, conn, ok) {
   const { lv } = G;
   const wk = $(".walker"), gate = $(`.gate.start[data-g="${k}"]`);
-  $("img", wk).src = Poke.img(G.pokes[k]);
+  $("img", wk).src = pimg(G.pokes[k]);
   const sp = gatePos(lv.n, G.gates[k]), gp = gatePos(lv.n, lv.goal);
   const pts = [sp].concat(conn.path.map(cellXY));
   if (ok) pts.push(gp);
@@ -958,7 +995,9 @@ async function go() {
     SFX.bad();
     await say(L.noStart);
     await sleep(600);
-    return backHome(k);
+    backHome(k);
+    if (G.super) await loseHeart();
+    return;
   }
   if (conn.reach) {
     // 센터까지 닿았지만 열매를 안 지나감
@@ -972,6 +1011,22 @@ async function go() {
   }
   await sleep(500);
   backHome(k);
+  if (G.super) await loseHeart();
+}
+/** 🌈 출발에 실패하면 ♥ 하나. 다 쓰면 판이 처음으로 (♥·되돌리기도 다시 3) */
+async function loseHeart() {
+  G.lives--;
+  const h = $("#hearts");
+  if (h) { h.firstChild.textContent = "♥".repeat(G.lives) + "♡".repeat(3 - G.lives); h.classList.remove("shake"); void h.offsetWidth; h.classList.add("shake"); }
+  if (G.lives > 0) { await say(L.superHeart); return; }
+  await sleep(TEST ? 10 : 500);
+  toast("💔 " + L.superOut, 2600);
+  await say(L.superOut);
+  Object.assign(G, { state: G.init, moves: 0, hist: [], redo: [], lives: 3, undoLeft: 3, rescued: new Set(), touch: [] });
+  if (h) h.firstChild.textContent = "♥♥♥";
+  const u = $("#undoLeft"); if (u) u.textContent = 3;
+  $$(".gate.start").forEach((g) => g.classList.remove("away"));
+  afterChange();
 }
 function markBroken(list) {
   const S = G.S;
@@ -1014,22 +1069,31 @@ async function rescued() {
   }
   const worldDone = !G.hard && lv.no === w.to && !Store.data.deco.includes(w.deco.id);
   if (worldDone) Store.data.deco.push(w.deco.id);
-  const hardDone = G.hard && lv.no === w.to && !Store.data.hardClear[w.no];
+  const hardDone = G.hard && !G.super && lv.no === w.to && !Store.data.hardClear[w.no];
   if (hardDone) Store.data.hardClear[w.no] = Date.now();
+  const superDone = G.super && lv.no === w.to && !Store.data.superClear[w.no];
+  if (superDone) Store.data.superClear[w.no] = Date.now();
+  // ✨ 슈퍼하드에서 구한 친구는 반짝이 도감에도
+  const freshShiny = [];
+  if (G.super) for (const p of pokes) {
+    if (!Store.data.shiny[p]) freshShiny.push(p);
+    Store.data.shiny[p] = { n: (Store.data.shiny[p] ? Store.data.shiny[p].n : 0) + 1, at: Store.data.shiny[p] ? Store.data.shiny[p].at : Date.now() };
+  }
   Store.save();
   const names = pokes.map(Poke.name);
   const d = layer("modal result", `<div class="win-box res">
-    <div class="res-scene ${pokes.length > 1 ? "two" : ""}">${pokes.map((p) => `<img class="res-poke" src="${Poke.img(p)}" alt="">`).join("")}<span class="sparkle s1">✦</span><span class="sparkle s2">✧</span><span class="sparkle s3">✦</span></div>
+    <div class="res-scene ${pokes.length > 1 ? "two" : ""} ${G.super ? "shiny" : ""}">${pokes.map((p) => `<img class="res-poke" src="${pimg(p)}" alt="">`).join("")}<span class="sparkle s1">✦</span><span class="sparkle s2">✧</span><span class="sparkle s3">✦</span></div>
     <h2>${names.map(esc).join(" · ")} 구조 성공!</h2>
     <div class="stars">${[1, 2, 3].map((k) => `<span class="${k <= stars ? "on" : ""}">★</span>`).join("")}</div>
     <p class="res-moves">${G.moves}번 움직였어요 <small>(⭐⭐⭐ = ${lv.par}번 안에)</small></p>
+    ${freshShiny.length ? `<p class="res-shiny">✨ <b>반짝이 친구 ${freshShiny.map((p) => esc(Poke.name(p))).join(" · ")}</b> 도감에 들어왔어요!</p>` : ""}
     <p class="res-dex">${pokes.map((p) => fresh.includes(p) ? `📖 <b>${esc(Poke.name(p))} 도감에 새 친구!</b> ${rarBadge(p)}` : `📖 ${esc(Poke.name(p))} 구조 ${dex[p].n}번째`).join("<br>")}</p>
     <div class="row">
-      <button class="btn big primary" data-v="next">${worldDone || hardDone ? "🎉 계속" : LV[lv.no + 1] && unlocked(lv.no + 1) ? "▶ 다음 레벨" : "🗺 지도로"}</button>
+      <button class="btn big primary" data-v="next">${worldDone || hardDone || superDone ? "🎉 계속" : LV[lv.no + 1] && unlocked(lv.no + 1) ? "▶ 다음 레벨" : "🗺 지도로"}</button>
       <button class="btn big" data-v="again">🔁 다시</button>
       <button class="btn big" data-v="map">레벨 고르기</button>
     </div></div>`);
-  say(en(EN.rescued), ...names, L.saved, en(EN.stars[stars]), fresh.length ? L.dexNew : null);
+  say(en(EN.rescued), ...names, L.saved, en(EN.stars[stars]), freshShiny.length ? L.shinyNew : fresh.length ? L.dexNew : null);
   const v = await waitPick(d);
   d.remove();
   G.busy = false;
@@ -1038,6 +1102,7 @@ async function rescued() {
   try {
     if (worldDone) await worldClear(w);
     if (hardDone) await hardClear(w);
+    if (superDone) await superClear(w);
   } catch (e) { if (e === ABORT) return; throw e; }
   goNext(lv.no);
 }
@@ -1048,6 +1113,25 @@ async function hardClear(w) {
     <p>${nw ? "🗺 하드 " + esc(nw.name) + " 이(가) 열렸어요!" : "🏆 하드 모드까지 모두 구했어요! 진짜 구조 대장!"}</p></div>`;
   await rocketScene(L.rocketOut, null, extra);
   say(nw ? L.hardWorld : L.hardAll);
+  // 하드 월드 9 까지 끝내면 슈퍼하드가 열린다 → 1-1 부터 (사용자 확정 v2026-11-06a)
+  if (!nw && superOpen()) await offerSuper();
+}
+/** 🌈 슈퍼하드 월드 정복 (월드 9 까지 = 전설의 구조 대장) */
+async function superClear(w) {
+  const nw = window.WORLDS[w.no];
+  const extra = `<div class="deco-get"><p class="crown">🌈👑</p><p>🌈 슈퍼하드 <b>${esc(w.name)}</b> 정복!</p>
+    <p>${nw ? "🗺 슈퍼하드 " + esc(nw.name) + " 이(가) 열렸어요!" : "🏆 슈퍼하드까지 모두 구했어요! 전설의 구조 대장!"}</p></div>`;
+  await rocketScene(L.rocketOut, null, extra);
+  say(nw ? L.superWorld : L.superAll);
+}
+async function offerSuper() {
+  const d = layer("modal", `<div class="win-box hard-box super-box"><h2>🌈 슈퍼하드가 열렸어요!</h2>
+    <p>하드 길을 <b>거울처럼 뒤집은</b> 판이에요.<br>힌트·건너뛰기가 없고, 조각 표시도 안 보여요.<br>되돌리기는 3번, 출발 기회는 ♥♥♥!<br>무지개 신전은 <b>안개</b>로 덮여 있어요.<br>✨ 구한 친구는 <b>반짝이</b>로 도감에 들어가요!</p>
+    <div class="row"><button class="btn big primary" data-v="go">🌈 슈퍼하드 시작</button><button class="btn big" data-v="later">나중에</button></div></div>`);
+  say(L.superOpen);
+  const v = await waitPick(d);
+  d.remove();
+  if (v === "go") { setMode("super"); G.lv = null; await renderLevels(window.WORLDS[0]); throw ABORT; }
 }
 function goNext(no) {
   const w = worldOf(no);
@@ -1091,6 +1175,7 @@ function skipLevel() {
   say(L.skip);
   toast("⏭ " + L.skip);
   const w = worldOf(lv.no);
+  if (G.super) { toast("🌈 슈퍼하드는 건너뛸 수 없어요"); return; }
   if (!G.hard && lv.no === w.to && !Store.data.deco.includes(w.deco.id)) {
     // 마지막 레벨을 넘겨도 다음 지역은 열린다 (장식·기념 그림은 깨야 받음)
     return renderMap();
@@ -1165,6 +1250,7 @@ function renderDex() {
   ensureMemories();
   const dex = Store.data.dex;
   const mem = Object.keys(Store.data.memories).map(Number).sort();
+  const shiny = Object.keys(Store.data.shiny).map(Number).sort((x, y) => Store.data.shiny[x].at - Store.data.shiny[y].at);
   const W = window.WORLDS.filter((w) => w.open);
   const total = Store.data.dexOrder.length;
   show(`
@@ -1173,6 +1259,8 @@ function renderDex() {
     <div class="dex-body">
       ${mem.length ? `<section class="win-box dex-sec"><h3>📸 기념 그림 <small>지역을 끝내면 구조한 친구들이 모여요</small></h3>
         <div class="mem-grid">${mem.map((no) => `<button class="mem-card" data-m="${no}">${memoryHTML(no, true)}<b>${no}. ${esc(window.WORLDS[no - 1].name)}</b></button>`).join("")}</div></section>` : ""}
+      ${shiny.length ? `<section class="win-box dex-sec shiny-sec"><h3>✨ 반짝이 친구 <small>슈퍼하드에서 구한 친구 · ${shiny.length}마리</small></h3>
+        <div class="dex-grid">${shiny.map((n) => `<button class="dcard shiny" data-n="${n}" data-shiny="1"><img src="${Poke.shinyImg(n)}" alt=""><b>${esc(Poke.name(n))}</b><i>✨</i></button>`).join("")}</div></section>` : ""}
       ${W.map((w) => {
         const pool = Poke.pool(w);
         const got = pool.filter((n) => dex[n] && dex[n].w === w.no).length;
@@ -1188,8 +1276,8 @@ function renderDex() {
     if (m) return showMemory(+m.dataset.m, false);
     const c = e.target.closest("[data-n]");
     if (!c) return;
-    const n = +c.dataset.n, r = dex[n];
-    const d = layer("modal", `<div class="win-box dex-card ${RAR_CLASS[Poke.rar(n)]}"><img src="${Poke.img(n)}" alt=""><h2>${esc(Poke.name(n))}</h2>
+    const n = +c.dataset.n, r = dex[n], sh = !!c.dataset.shiny;
+    const d = layer("modal", `<div class="win-box dex-card ${RAR_CLASS[Poke.rar(n)]}"><img src="${sh ? Poke.shinyImg(n) : Poke.img(n)}" alt="">${sh ? `<p class="res-shiny">✨ 반짝이</p>` : ""}<h2>${esc(Poke.name(n))}</h2>
       <p>${Poke.types(n).map((t) => `<span class="type">${esc(t)}</span>`).join(" ")} ${rarBadge(n)}</p>
       <p>구조 ${r.n}번 · 처음 구조 ${new Date(r.at).toLocaleDateString("ko-KR")}</p><button class="btn big" data-v="ok">닫기</button></div>`);
     say(Poke.name(n));
@@ -1331,7 +1419,7 @@ window.addEventListener("online", () => checkUpdate(true));
 setInterval(() => checkUpdate(), 10 * 60000);
 
 // ---------- 시험용 손잡이 (?test) ----------
-if (TEST) window.__T = { G, Store, Update, E, LV, Poke, startLevel, renderTitle, renderMap, renderLevels, renderDex, renderCenter, renderParent, act, go, tap, hint, undo, redo, reset, skipLevel, unlocked, setMode, hardOpen, isHard, pickAbility, pressSwitch, readyGates, showMemory, makeMemory, storedSolution, solution };
+if (TEST) window.__T = { G, Store, Update, E, LV, Poke, startLevel, renderTitle, renderMap, renderLevels, renderDex, renderCenter, renderParent, act, go, tap, hint, undo, redo, reset, skipLevel, unlocked, setMode, hardOpen, isHard, superOpen, isSuper, fogVisible, pickAbility, pressSwitch, readyGates, showMemory, makeMemory, storedSolution, solution };
 
 setMode(Store.data.mode);
 renderTitle();
